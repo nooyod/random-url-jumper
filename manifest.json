@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+
+  "name": "Random URL Jumper",
+
+  "version": "2.0",
+
+  "description": "랜덤 URL 자동 이동",
+
+  "permissions": [
+    "storage",
+    "tabs",
+    "alarms"
+  ],
+
+  "host_permissions": [
+    "<all_urls>"
+  ],
+
+  "background": {
+    "service_worker": "background/background.js",
+    "type": "module"
+  },
+
+  "action": {
+    "default_popup": "popup/popup.html"
+  },
+
+  "commands": {
+    "jump_now": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y"
+      },
+      "description": "즉시 이동"
+    }
+  },
+
+  "icons": {
+    "128": "assets/icon.png"
+  }
+}
