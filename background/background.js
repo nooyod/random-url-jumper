@@ -1,89 +1,131 @@
 import {
+
     jump
+
 }
+
     from "./jumpService.js";
 
 import {
+
     start,
     stop
+
 }
+
     from "./scheduler.js";
 
-chrome.runtime.onMessage.addListener(
-
-    async (
-        msg
-    ) => {
-
-        if (
-            msg.action === "jump"
-        )
-            await jump();
-
-        if (
-            msg.action === "start"
-        ) {
-
-            const s =
-
-                await chrome
-                    .storage
-                    .local
-                    .get();
-
-            start(
-                s.interval
-            );
-
-        }
-
-        if (
-            msg.action === "stop"
-        )
-            stop();
-
-    }
-
-);
-
 chrome
-    .alarms
-    .onAlarm
+    .runtime
+    .onMessage
     .addListener(
 
-        async () => {
+        async (
 
-            const s =
+            msg
 
-                await chrome
-                    .storage
-                    .local
-                    .get();
+        ) => {
 
             if (
-                !s.running
-            )
-                return;
+                msg.action === "jump"
+            ) {
 
-            await jump();
+                await jump();
+
+            }
+
+            if (
+                msg.action === "start"
+            ) {
+
+                const s =
+
+                    await chrome
+                        .storage
+                        .local
+                        .get();
+
+                await start(
+
+                    s.interval || 10,
+
+                    jump
+
+                );
+
+            }
+
+            if (
+                msg.action === "stop"
+            ) {
+
+                console.log(
+                    "STOP RECEIVED"
+                );
+
+                await stop(
+                    "user"
+                );
+
+            }
 
         }
 
     );
 
 chrome
-    .commands
-    .onCommand
+    .tabs
+    .onRemoved
     .addListener(
 
         async (
-            cmd
+
+            tabId
+
         ) => {
 
+            const data =
+
+                await chrome
+                    .storage
+                    .session
+                    .get();
+
             if (
-                cmd === "jump_now"
+
+                data.tabId === tabId
+
             )
-                await jump();
+
+                await stop(
+                    "tab_closed"
+                );
+
+        }
+
+    );
+
+chrome
+    .runtime
+    .onStartup
+    .addListener(
+
+        async () => {
+
+            await stop();
+
+        }
+
+    );
+
+chrome
+    .runtime
+    .onSuspend
+    .addListener(
+
+        async () => {
+
+            await stop();
 
         }
 

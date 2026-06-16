@@ -32,20 +32,32 @@ start.onclick =
 
     };
 
-stop.onclick =
+document
+    .getElementById(
+        "stop"
+    )
+    .addEventListener(
 
-    () => {
+        "click",
 
-        chrome
-            .runtime
-            .sendMessage({
+        async () => {
 
-                action:
-                    "stop"
+            console.log(
+                "STOP CLICK"
+            );
 
-            });
+            await chrome
+                .runtime
+                .sendMessage({
 
-    };
+                    action:
+                        "stop"
+
+                });
+
+        }
+
+    );
 
 jump.onclick =
 

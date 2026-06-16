@@ -1,39 +1,104 @@
+let timer = null;
+
+let runningTab = null;
+
 export async function start(
-    seconds
+    seconds,
+    callback
 ) {
+
+    await stop(
+        "restart"
+    );
+
+    const tabs =
+        await chrome.tabs.query({
+
+            active: true,
+
+            currentWindow: true
+
+        });
+
+    if (
+        !tabs.length
+    )
+        return;
+
+    runningTab =
+        tabs[0].id;
+
+    timer =
+        setInterval(
+
+            async () => {
+
+                try {
+
+                    await chrome.tabs.get(
+                        runningTab
+                    );
+
+                    await callback();
+
+                }
+
+                catch {
+
+                    await stop();
+
+                }
+
+            },
+
+            seconds * 1000
+
+        );
 
     await chrome
         .storage
-        .local
+        .session
         .set({
-            running: true
-        });
 
-    chrome
-        .alarms
-        .create(
-            "auto",
-            {
-                periodInMinutes:
-                    seconds / 60
-            }
-        );
+            running: true,
+
+            tabId:
+                runningTab
+
+        });
 
 }
 
-export async function stop() {
+export async function stop(
+    reason = "manual"
+) {
+
+    console.log(
+        `STOP: ${reason}`
+    );
+
+    if (
+        timer !== null
+    ) {
+
+        clearInterval(
+            timer);
+
+        timer = null;
+
+    }
+
+    runningTab = null;
 
     await chrome
         .storage
-        .local
-        .set({
-            running: false
-        });
+        .session
+        .clear();
 
-    chrome
-        .alarms
-        .clear(
-            "auto"
-        );
+}
+
+export function isRunning() {
+
+    return timer !== null;
 
 }
