@@ -1,8 +1,72 @@
-document
-    .getElementById(
-        "open"
-    )
-    .onclick = () => {
+import {
+
+    loadProfiles,
+    applyProfile
+
+}
+
+    from
+
+    "./profileSelector.js";
+
+await loadProfiles();
+
+profile.onchange =
+
+    applyProfile;
+
+start.onclick =
+
+    () => {
+
+        applyProfile();
+
+        chrome
+            .runtime
+            .sendMessage({
+
+                action:
+                    "start"
+
+            });
+
+    };
+
+stop.onclick =
+
+    () => {
+
+        chrome
+            .runtime
+            .sendMessage({
+
+                action:
+                    "stop"
+
+            });
+
+    };
+
+jump.onclick =
+
+    () => {
+
+        applyProfile();
+
+        chrome
+            .runtime
+            .sendMessage({
+
+                action:
+                    "jump"
+
+            });
+
+    };
+
+settings.onclick =
+
+    () => {
 
         chrome
             .runtime
