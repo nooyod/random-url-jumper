@@ -1,6 +1,11 @@
-import {
-    initialize
-}
-    from "./ui.js";
+document
+    .getElementById(
+        "open"
+    )
+    .onclick = () => {
 
-initialize();
+        chrome
+            .runtime
+            .openOptionsPage();
+
+    };
