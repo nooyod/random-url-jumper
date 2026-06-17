@@ -11,26 +11,41 @@ import {
 
 await loadProfiles();
 
-profile.onchange =
+document
+    .getElementById(
+        "profile"
+    )
+    .addEventListener(
 
-    applyProfile;
+        "change",
 
-start.onclick =
+        applyProfile
 
-    () => {
+    );
 
-        applyProfile();
+document
+    .getElementById(
+        "start"
+    )
+    .addEventListener(
 
-        chrome
-            .runtime
-            .sendMessage({
+        "click",
 
-                action:
-                    "start"
+        async () => {
 
-            });
+            await applyProfile();
 
-    };
+            await chrome
+                .runtime
+                .sendMessage({
+
+                    action: "start"
+
+                });
+
+        }
+
+    );
 
 document
     .getElementById(
@@ -42,16 +57,11 @@ document
 
         async () => {
 
-            console.log(
-                "STOP CLICK"
-            );
-
             await chrome
                 .runtime
                 .sendMessage({
 
-                    action:
-                        "stop"
+                    action: "stop"
 
                 });
 
@@ -59,29 +69,44 @@ document
 
     );
 
-jump.onclick =
+document
+    .getElementById(
+        "jump"
+    )
+    .addEventListener(
 
-    () => {
+        "click",
 
-        applyProfile();
+        async () => {
 
-        chrome
-            .runtime
-            .sendMessage({
+            await applyProfile();
 
-                action:
-                    "jump"
+            await chrome
+                .runtime
+                .sendMessage({
 
-            });
+                    action: "jump"
 
-    };
+                });
 
-settings.onclick =
+        }
 
-    () => {
+    );
 
-        chrome
-            .runtime
-            .openOptionsPage();
+document
+    .getElementById(
+        "settings"
+    )
+    .addEventListener(
 
-    };
+        "click",
+
+        () => {
+
+            chrome
+                .runtime
+                .openOptionsPage();
+
+        }
+
+    );

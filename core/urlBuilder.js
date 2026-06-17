@@ -4,6 +4,6 @@ export function build(
     suffix=""
 ) {
 
-    return `${base}/${value}${suffix}`;
+    return `${base}${value}${suffix}`;
 
 }

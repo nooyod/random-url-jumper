@@ -1,56 +1,13 @@
 export async function loadProfiles() {
 
-    const data =
-
-        await chrome
-            .storage
-            .local
-            .get(
-                "profiles"
-            );
-
-    const list =
+    const select =
 
         document
             .getElementById(
                 "profile"
             );
 
-    list.innerHTML = "";
-
-    (data.profiles || [])
-
-        .forEach(
-
-            p => {
-
-                const o =
-
-                    document
-                        .createElement(
-                            "option"
-                        );
-
-                o.value =
-                    p.name;
-
-                o.text =
-                    p.name;
-
-                list.appendChild(
-                    o);
-
-            }
-
-        );
-
-}
-
-export async function applyProfile() {
-
-    const selected =
-
-        profile.value;
+    select.innerHTML = "";
 
     const data =
 
@@ -61,15 +18,73 @@ export async function applyProfile() {
                 "profiles"
             );
 
-    const target =
+    const profiles =
 
-        data.profiles.find(
+        data.profiles
+        ||
+        [];
 
-            x =>
+    profiles.forEach(
 
-                x.name === selected
+        p => {
 
-        );
+            const o =
+
+                document
+                    .createElement(
+                        "option"
+                    );
+
+            o.value =
+                p.name;
+
+            o.text =
+                p.name;
+
+            select.appendChild(
+                o);
+
+        }
+
+    );
+
+}
+
+export async function applyProfile() {
+
+    const name =
+
+        document
+            .getElementById(
+                "profile"
+            )
+            .value;
+
+    const data =
+
+        await chrome
+            .storage
+            .local
+            .get(
+                "profiles"
+            );
+
+    const profile =
+
+        data
+            .profiles
+            ?.find(
+
+                x =>
+
+                    x.name === name
+
+            );
+
+    if (
+        !profile
+    )
+        return;
 
     await chrome
         .storage
@@ -77,19 +92,19 @@ export async function applyProfile() {
         .set({
 
             baseUrl:
-                target.baseUrl,
+                profile.baseUrl,
 
             mode:
-                target.mode,
+                profile.mode,
 
             length:
-                target.length,
+                profile.length,
 
             interval:
-                target.interval,
+                profile.interval,
 
             suffix:
-                target.suffix
+                profile.suffix
 
         });
 

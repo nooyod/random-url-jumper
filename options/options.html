@@ -6,6 +6,24 @@
 
     <meta charset="UTF-8">
 
+    <style>
+
+        body {
+            padding: 20px;
+            max-width: 600px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            margin-bottom: 12px;
+        }
+
+        button {
+            margin-right: 10px;
+        }
+    </style>
+
 </head>
 
 <body>
@@ -16,24 +34,23 @@
 
     </h2>
 
-    프로필
+    프로필 선택
 
     <select id="profileList">
+
+        <option value="">
+            새 프로필
+        </option>
+
     </select>
 
-    <button id="load">
+    <br>
 
-        로드
+    프로필 이름
 
-    </button>
+    <input id="profileName">
 
-    <button id="delete">
-
-        삭제
-
-    </button>
-
-    <br><br>
+    <br>
 
     주소
 
@@ -46,15 +63,21 @@
     <select id="mode">
 
         <option value="number">
+
             숫자
+
         </option>
 
         <option value="text">
+
             문자
+
         </option>
 
         <option value="mix">
+
             혼합
+
         </option>
 
     </select>
@@ -63,13 +86,15 @@
 
     길이
 
-    <input id="length">
+    <input id="length"
+           value="4">
 
     <br>
 
     간격
 
-    <input id="interval">
+    <input id="interval"
+           value="10">
 
     <br>
 
@@ -77,17 +102,17 @@
 
     <input id="suffix">
 
-    <br><br>
+    <br>
 
     <button id="save">
 
-        현재 저장
+        저장
 
     </button>
 
-    <button id="saveAs">
+    <button id="delete">
 
-        새 프로필 저장
+        삭제
 
     </button>
 

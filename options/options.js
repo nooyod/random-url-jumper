@@ -1,7 +1,9 @@
 import {
 
-    loadProfiles,
-    saveProfiles
+    refreshProfiles,
+    loadSelected,
+    saveProfile,
+    deleteCurrent
 
 }
 
@@ -9,97 +11,40 @@ import {
 
     "./profileManager.js";
 
-async function refresh() {
-
-    const list =
-
-        document
-            .getElementById(
-                "profileList"
-            );
-
-    list.innerHTML = "";
-
-    const profiles =
-
-        await loadProfiles();
-
-    profiles.forEach(
-
-        (p, i) => {
-
-            const o =
-
-                document
-                    .createElement(
-                        "option"
-                    );
-
-            o.value = i;
-
-            o.text = p.name;
-
-            list.appendChild(
-                o
-            );
-
-        }
-
-    );
-
-}
+await refreshProfiles();
 
 document
     .getElementById(
-        "saveAs"
+        "profileList"
     )
+    .addEventListener(
 
-    .onclick =
+        "change",
 
-    async () => {
+        loadSelected
 
-        const name =
+    );
 
-            prompt(
-                "프로필명"
-            );
+document
+    .getElementById(
+        "save"
+    )
+    .addEventListener(
 
-        if (
-            !name
-        )
-            return;
+        "click",
 
-        const profiles =
+        saveProfile
 
-            await loadProfiles();
+    );
 
-        profiles.push({
+document
+    .getElementById(
+        "delete"
+    )
+    .addEventListener(
 
-            name,
+        "click",
 
-            baseUrl:
-                baseUrl.value,
+        deleteCurrent
 
-            mode:
-                mode.value,
-
-            length:
-                length.value,
-
-            interval:
-                interval.value,
-
-            suffix:
-                suffix.value
-
-        });
-
-        await saveProfiles(
-            profiles
-        );
-
-        refresh();
-
-    };
-
-refresh();
+    );
