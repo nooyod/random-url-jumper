@@ -1,6 +1,9 @@
-function randomString(length) {
+function randomString(
+    length
+) {
 
     const chars =
+
         "abcdefghijklmnopqrstuvwxyz";
 
     let result = "";
@@ -15,13 +18,11 @@ function randomString(length) {
 
             chars[
             Math.floor(
-
                 Math.random()
 
                 *
 
                 chars.length
-
             )
 
             ];
@@ -32,7 +33,9 @@ function randomString(length) {
 
 }
 
-function randomNumber(length) {
+function randomNumber(
+    length
+) {
 
     let result = "";
 
@@ -58,7 +61,7 @@ function randomNumber(length) {
 
 }
 
-function generateValue(
+function generateRandom(
     mode,
     length
 ) {
@@ -79,9 +82,7 @@ function generateValue(
 
         Math.random()
 
-            >
-
-            0.5
+            > 0.5
 
             ?
 
@@ -102,7 +103,9 @@ function generateValue(
 
 }
 
-export async function jump() {
+export async function jump(
+    tabId
+) {
 
     const settings =
 
@@ -111,17 +114,13 @@ export async function jump() {
             .local
             .get();
 
-    let value = "";
+    let value;
 
 
-    // 목록 기반 랜덤
+    // 목록 기반
     if (
 
-        settings.generator
-
-        ===
-
-        "crawl"
+        settings.generator === "crawl"
 
         &&
 
@@ -153,12 +152,12 @@ export async function jump() {
 
     }
 
-    // 일반 랜덤
+    // 랜덤
     else {
 
         value =
 
-            generateValue(
+            generateRandom(
 
                 settings.mode,
 
@@ -184,27 +183,13 @@ export async function jump() {
 
         );
 
-    const tabs =
-
-        await chrome
-            .tabs
-            .query({
-
-                active: true,
-
-                currentWindow: true
-
-            });
-
-    if (
-        tabs.length
-    ) {
+    try {
 
         await chrome
             .tabs
             .update(
 
-                tabs[0].id,
+                tabId,
 
                 {
 
@@ -213,6 +198,18 @@ export async function jump() {
                 }
 
             );
+
+    }
+
+    catch (
+
+    e
+
+    ) {
+
+        console.log(
+            e
+        );
 
     }
 

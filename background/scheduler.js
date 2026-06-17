@@ -12,13 +12,16 @@ export async function start(
     );
 
     const tabs =
-        await chrome.tabs.query({
 
-            active: true,
+        await chrome
+            .tabs
+            .query({
 
-            currentWindow: true
+                active: true,
 
-        });
+                currentWindow: true
+
+            });
 
     if (
         !tabs.length
@@ -27,33 +30,6 @@ export async function start(
 
     runningTab =
         tabs[0].id;
-
-    timer =
-        setInterval(
-
-            async () => {
-
-                try {
-
-                    await chrome.tabs.get(
-                        runningTab
-                    );
-
-                    await callback();
-
-                }
-
-                catch {
-
-                    await stop();
-
-                }
-
-            },
-
-            seconds * 1000
-
-        );
 
     await chrome
         .storage
@@ -67,15 +43,45 @@ export async function start(
 
         });
 
+    timer =
+
+        setInterval(
+
+            async () => {
+
+                try {
+
+                    await chrome
+                        .tabs
+                        .get(
+                            runningTab
+                        );
+
+                    await callback(
+                        runningTab
+                    );
+
+                }
+
+                catch {
+
+                    await stop(
+                        "tab_closed"
+                    );
+
+                }
+
+            },
+
+            seconds * 1000
+
+        );
+
 }
 
 export async function stop(
     reason = "manual"
 ) {
-
-    console.log(
-        `STOP: ${reason}`
-    );
 
     if (
         timer !== null
@@ -94,6 +100,12 @@ export async function stop(
         .storage
         .session
         .clear();
+
+}
+
+export function getRunningTab() {
+
+    return runningTab;
 
 }
 
