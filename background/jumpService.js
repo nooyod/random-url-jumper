@@ -1,53 +1,219 @@
-import {
-    load
-}
-    from "../core/storage.js";
+function randomString(length) {
 
-import {
-    generate
-}
-    from "../core/randomGenerator.js";
+    const chars =
+        "abcdefghijklmnopqrstuvwxyz";
 
-import {
-    build
-}
-    from "../core/urlBuilder.js";
+    let result = "";
 
-import {
-    move
+    for (
+        let i = 0;
+        i < length;
+        i++
+    ) {
+
+        result +=
+
+            chars[
+            Math.floor(
+
+                Math.random()
+
+                *
+
+                chars.length
+
+            )
+
+            ];
+
+    }
+
+    return result;
+
 }
-    from "./navigator.js";
+
+function randomNumber(length) {
+
+    let result = "";
+
+    for (
+        let i = 0;
+        i < length;
+        i++
+    ) {
+
+        result +=
+
+            Math.floor(
+
+                Math.random()
+
+                * 10
+
+            );
+
+    }
+
+    return result;
+
+}
+
+function generateValue(
+    mode,
+    length
+) {
+
+    if (
+        mode === "text"
+    )
+
+        return randomString(
+            length
+        );
+
+    if (
+        mode === "mix"
+    ) {
+
+        return
+
+        Math.random()
+
+            >
+
+            0.5
+
+            ?
+
+            randomString(
+                length
+            )
+
+            :
+
+            randomNumber(
+                length
+            );
+
+    }
+
+    return randomNumber(
+        length);
+
+}
 
 export async function jump() {
 
-    const s =
+    const settings =
 
-        await load();
+        await chrome
+            .storage
+            .local
+            .get();
 
-    const value =
+    let value = "";
 
-        generate(
 
-            s.length || 4,
+    // ¸ñ·Ï ±â¹Ý ·£´ý
+    if (
 
-            s.mode || "number"
+        settings.generator
 
-        );
+        ===
+
+        "crawl"
+
+        &&
+
+        settings.cachedIds
+
+            ?.length
+
+    ) {
+
+        value =
+
+            String(
+
+                settings.cachedIds[
+
+                Math.floor(
+
+                    Math.random()
+
+                    *
+
+                    settings.cachedIds.length
+
+                )
+
+                ]
+
+            );
+
+    }
+
+    // ÀÏ¹Ý ·£´ý
+    else {
+
+        value =
+
+            generateValue(
+
+                settings.mode,
+
+                settings.length
+
+            );
+
+    }
 
     const url =
 
-        build(
+        settings.baseUrl +
 
-            s.baseUrl,
+        value +
 
-            value,
+        (
 
-            s.suffix
+            settings.suffix
+
+            ||
+
+            ""
 
         );
 
-    await move(
-        url
-    );
+    const tabs =
+
+        await chrome
+            .tabs
+            .query({
+
+                active: true,
+
+                currentWindow: true
+
+            });
+
+    if (
+        tabs.length
+    ) {
+
+        await chrome
+            .tabs
+            .update(
+
+                tabs[0].id,
+
+                {
+
+                    url
+
+                }
+
+            );
+
+    }
 
 }

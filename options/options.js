@@ -11,40 +11,71 @@ import {
 
     "./profileManager.js";
 
+import {
+
+    crawlBoard
+
+}
+
+    from
+
+    "../core/boardCrawler.js";
+
 await refreshProfiles();
 
 document
     .getElementById(
         "profileList"
     )
-    .addEventListener(
+    .onchange =
 
-        "change",
-
-        loadSelected
-
-    );
+    loadSelected;
 
 document
     .getElementById(
         "save"
     )
-    .addEventListener(
+    .onclick =
 
-        "click",
-
-        saveProfile
-
-    );
+    saveProfile;
 
 document
     .getElementById(
         "delete"
     )
-    .addEventListener(
+    .onclick =
 
-        "click",
+    deleteCurrent;
 
-        deleteCurrent
+document
+    .getElementById(
+        "refreshIds"
+    )
+    .onclick =
 
-    );
+    async () => {
+
+        const ids =
+
+            await crawlBoard();
+
+        await chrome
+            .storage
+            .local
+            .set({
+
+                tempIds:
+                    ids
+
+            });
+
+        document
+            .getElementById(
+                "count"
+            )
+
+            .textContent =
+
+            `${ids.length}개 수집됨`;
+
+    };

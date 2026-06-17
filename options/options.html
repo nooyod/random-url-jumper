@@ -6,21 +6,35 @@
 
     <meta charset="UTF-8">
 
+    <title>설정</title>
+
     <style>
 
         body {
+            font-family: sans-serif;
             padding: 20px;
-            max-width: 600px;
+            max-width: 700px;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
         }
 
         input,
         select {
             width: 100%;
-            margin-bottom: 12px;
+            padding: 6px;
+            box-sizing: border-box;
         }
 
         button {
+            margin-top: 14px;
             margin-right: 10px;
+        }
+
+        #count {
+            margin-left: 10px;
         }
     </style>
 
@@ -28,81 +42,155 @@
 
 <body>
 
-    <h2>
+    <h2>프로필 설정</h2>
 
-        설정
+    <label>
 
-    </h2>
+        프로필 선택
 
-    프로필 선택
+        <select id="profileList">
 
-    <select id="profileList">
+            <option value="">
+                새 프로필
+            </option>
 
-        <option value="">
-            새 프로필
-        </option>
+        </select>
 
-    </select>
+    </label>
 
-    <br>
+    <label>
 
-    프로필 이름
+        프로필 이름
 
-    <input id="profileName">
+        <input id="profileName">
 
-    <br>
+    </label>
 
-    주소
+    <label>
 
-    <input id="baseUrl">
+        주소
 
-    <br>
+        <input id="baseUrl">
 
-    모드
+    </label>
 
-    <select id="mode">
+    <label>
 
-        <option value="number">
+        생성 방식
 
-            숫자
+        <select id="generator">
 
-        </option>
+            <option value="random">
 
-        <option value="text">
+                랜덤 생성
 
-            문자
+            </option>
 
-        </option>
+            <option value="crawl">
 
-        <option value="mix">
+                목록 기반 랜덤
 
-            혼합
+            </option>
 
-        </option>
+        </select>
 
-    </select>
+    </label>
 
-    <br>
+    <label>
 
-    길이
+        목록 주소
 
-    <input id="length"
-           value="4">
+        <input id="listUrl">
 
-    <br>
+    </label>
 
-    간격
+    <label>
 
-    <input id="interval"
-           value="10">
+        번호 추출 방식
 
-    <br>
+        <select id="extractMode">
 
-    뒷주소
+            <option value="path">
 
-    <input id="suffix">
+                주소 마지막 숫자
 
-    <br>
+            </option>
+
+            <option value="query">
+
+                ?id=123
+
+            </option>
+
+        </select>
+
+    </label>
+
+    <button id="refreshIds">
+
+        목록 새로고침
+
+    </button>
+
+    <span id="count">
+
+        0개 수집됨
+
+    </span>
+
+    <label>
+
+        문자 생성 방식
+
+        <select id="mode">
+
+            <option value="number">
+
+                숫자
+
+            </option>
+
+            <option value="text">
+
+                문자
+
+            </option>
+
+            <option value="mix">
+
+                혼합
+
+            </option>
+
+        </select>
+
+    </label>
+
+    <label>
+
+        길이
+
+        <input id="length"
+               value="4">
+
+    </label>
+
+    <label>
+
+        간격(초)
+
+        <input id="interval"
+               value="10">
+
+    </label>
+
+    <label>
+
+        뒷주소
+
+        <input id="suffix">
+
+    </label>
 
     <button id="save">
 

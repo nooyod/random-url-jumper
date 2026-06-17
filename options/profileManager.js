@@ -1,6 +1,13 @@
-async function getProfiles() {
+function el(id) {
+
+    return document.getElementById(id);
+
+}
+
+async function read() {
 
     const data =
+
         await chrome.storage.local.get(
             "profiles"
         );
@@ -9,7 +16,7 @@ async function getProfiles() {
 
 }
 
-async function setProfiles(
+async function write(
     profiles
 ) {
 
@@ -21,18 +28,6 @@ async function setProfiles(
 
 }
 
-
-// DOM 가져오기
-function el(id) {
-
-    return document.getElementById(
-        id
-    );
-
-}
-
-
-// 목록 표시
 export async function refreshProfiles() {
 
     const list =
@@ -49,14 +44,14 @@ export async function refreshProfiles() {
 
     empty.value = "";
 
-    empty.text = "새 프로필";
+    empty.textContent = "새 프로필";
 
     list.appendChild(
-        empty
-    );
+        empty);
 
     const profiles =
-        await getProfiles();
+
+        await read();
 
     profiles.forEach(
 
@@ -67,15 +62,12 @@ export async function refreshProfiles() {
                     "option"
                 );
 
-            o.value =
-                p.name;
+            o.value = p.name;
 
-            o.text =
-                p.name;
+            o.textContent = p.name;
 
             list.appendChild(
-                o
-            );
+                o);
 
         }
 
@@ -83,58 +75,80 @@ export async function refreshProfiles() {
 
 }
 
-
-// 프로필 로드
 export async function loadSelected() {
 
-    const selected =
+    const name =
         el(
             "profileList"
         ).value;
 
-    if (!selected)
+    if (!name)
         return;
 
     const profiles =
-        await getProfiles();
+
+        await read();
 
     const p =
+
         profiles.find(
 
             x =>
 
-                x.name === selected
+                x.name === name
 
         );
 
     if (!p)
         return;
 
-    el("profileName").value =
-        p.name;
+    [
+        "profileName",
+        "baseUrl",
+        "generator",
+        "listUrl",
+        "extractMode",
+        "mode",
+        "length",
+        "interval",
+        "suffix"
 
-    el("baseUrl").value =
-        p.baseUrl;
+    ]
 
-    el("mode").value =
-        p.mode;
+        .forEach(
 
-    el("length").value =
-        p.length;
+            k => {
 
-    el("interval").value =
-        p.interval;
+                if (
+                    el(k)
+                )
 
-    el("suffix").value =
-        p.suffix || "";
+                    el(k).value =
+
+                        p[k]
+
+                        ??
+
+                        "";
+
+            }
+
+        );
+
+    el(
+        "count"
+    )
+
+        .textContent =
+
+        `${(p.cachedIds || []).length}개 수집됨`;
 
 }
 
-
-// 저장
 export async function saveProfile() {
 
     const name =
+
         el(
             "profileName"
         )
@@ -152,30 +166,77 @@ export async function saveProfile() {
     }
 
     const profiles =
-        await getProfiles();
 
-    const item = {
+        await read();
+
+    const ids =
+
+        (
+            await chrome
+                .storage
+                .local
+                .get(
+                    "tempIds"
+                )
+
+        )
+
+            .tempIds
+
+        ||
+
+        [];
+
+    const profile = {
 
         name,
 
         baseUrl:
-            el("baseUrl").value,
+            el(
+                "baseUrl"
+            ).value,
+
+        generator:
+            el(
+                "generator"
+            ).value,
+
+        listUrl:
+            el(
+                "listUrl"
+            ).value,
+
+        extractMode:
+            el(
+                "extractMode"
+            ).value,
 
         mode:
-            el("mode").value,
+            el(
+                "mode"
+            ).value,
 
         length:
             Number(
-                el("length").value
+                el(
+                    "length"
+                ).value
             ),
 
         interval:
             Number(
-                el("interval").value
+                el(
+                    "interval"
+                ).value
             ),
 
         suffix:
-            el("suffix").value
+            el(
+                "suffix"
+            ).value,
+
+        cachedIds:
+            ids
 
     };
 
@@ -191,21 +252,16 @@ export async function saveProfile() {
 
     if (
         idx >= 0
-    ) {
+    )
 
-        profiles[idx] = item;
+        profiles[idx] = profile;
 
-    }
-
-    else {
+    else
 
         profiles.push(
-            item
-        );
+            profile);
 
-    }
-
-    await setProfiles(
+    await write(
         profiles
     );
 
@@ -221,66 +277,36 @@ export async function saveProfile() {
 
 }
 
-
-// 삭제
 export async function deleteCurrent() {
 
-    const selected =
+    const name =
+
         el(
             "profileList"
         ).value;
 
-    if (!selected)
+    if (!name)
         return;
 
     const profiles =
-        await getProfiles();
 
-    const remain =
+        await read();
+
+    await write(
 
         profiles.filter(
 
             x =>
 
-                x.name !== selected
+                x.name !== name
 
-        );
+        )
 
-    await setProfiles(
-        remain
     );
 
     await refreshProfiles();
 
-    [
-        "profileName",
-        "baseUrl",
-        "suffix"
-
-    ]
-
-        .forEach(
-
-            id =>
-
-                el(id).value = ""
-
-        );
-
-    el(
-        "mode"
-    ).value = "number";
-
-    el(
-        "length"
-    ).value = 4;
-
-    el(
-        "interval"
-    ).value = 10;
-
     alert(
         "삭제 완료"
     );
-
 }
