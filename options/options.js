@@ -21,7 +21,9 @@ import {
 
     "../core/boardCrawler.js";
 
+
 await refreshProfiles();
+
 
 document
     .getElementById(
@@ -31,6 +33,7 @@ document
 
     loadSelected;
 
+
 document
     .getElementById(
         "save"
@@ -38,6 +41,7 @@ document
     .onclick =
 
     saveProfile;
+
 
 document
     .getElementById(
@@ -47,6 +51,7 @@ document
 
     deleteCurrent;
 
+
 document
     .getElementById(
         "refreshIds"
@@ -55,27 +60,103 @@ document
 
     async () => {
 
-        const ids =
+        const status =
 
-            await crawlBoard();
+            document
+                .getElementById(
+                    "status"
+                );
 
-        await chrome
-            .storage
-            .local
-            .set({
+        try {
 
-                tempIds:
-                    ids
+            status.innerHTML =
 
-            });
+                "수집 중...";
 
-        document
-            .getElementById(
-                "count"
-            )
+            const ids =
 
-            .textContent =
+                await crawlBoard();
 
-            `${ids.length}개 수집됨`;
+            const time =
+
+                new Date()
+
+                    .toLocaleString();
+
+            await chrome
+                .storage
+                .local
+                .set({
+
+                    temp: {
+
+                        ids,
+
+                        time
+
+                    }
+
+                });
+
+            status.innerHTML =
+
+                `
+${ids.length}개 수집됨
+<br>
+${time}
+`;
+
+            console.log(
+                ids
+            );
+
+        }
+
+        catch (
+
+        e
+
+        ) {
+
+            console.error(
+                e
+            );
+
+            status.innerHTML =
+
+                "수집 실패";
+
+        }
 
     };
+
+
+generator.onchange =
+
+    () => {
+
+        crawlArea.style.display =
+
+            generator.value
+
+                ===
+
+                "crawl"
+
+                ?
+
+                "block"
+
+                :
+
+                "none";
+
+    };
+
+generator.dispatchEvent(
+
+    new Event(
+        "change"
+    )
+
+);

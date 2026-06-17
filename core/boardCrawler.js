@@ -1,143 +1,246 @@
 function extractId(
-    url,
-    mode
-) {
+url,
+mode,
+paramName,
+regex
+){
 
-    try {
+try{
 
-        if (
-            mode === "query"
-        ) {
+if(
+mode==="param"
+){
 
-            return Number(
+const u=
+new URL(
+url
+);
 
-                new URL(
-                    url
-                )
+const value=
 
-                    .searchParams
+u.searchParams.get(
+paramName
+);
 
-                    .get(
-                        "id"
-                    )
-
-            );
-
-        }
-
-        const m =
-
-            url.match(
-
-                /\/(\d+)\/?$/
-
-            );
-
-        return m
-            ?
-            Number(
-                m[1]
-            )
-            :
-            null;
-
-    }
-
-    catch {
-
-        return null;
-
-    }
+return value
+?
+Number(
+value
+)
+:
+null;
 
 }
 
-export async function crawlBoard() {
+if(
+mode==="regex"
+){
 
-    const listUrl =
+const m=
 
-        document
-            .getElementById(
-                "listUrl"
-            )
-            .value;
+url.match(
 
-    const extractMode =
+new RegExp(
+regex)
 
-        document
-            .getElementById(
-                "extractMode"
-            )
-            .value;
+);
 
-    const html =
+return m
+?
+Number(
+m[1]
+)
+:
+null;
 
-        await fetch(
-            listUrl
-        )
+}
 
-            .then(
+const m=
 
-                r =>
+url.match(
 
-                    r.text()
+/\/(\d+)\/?$/
 
-            );
+);
 
-    const dom =
+return m
+?
+Number(
+m[1]
+)
+:
+null;
 
-        new DOMParser()
+}
 
-            .parseFromString(
+catch{
 
-                html,
+return null;
 
-                "text/html"
+}
 
-            );
+}
 
-    const ids = [];
 
-    dom
 
-        .querySelectorAll(
-            "a"
-        )
+export async function crawlBoard(){
 
-        .forEach(
+const listUrl=
 
-            a => {
+document
+.getElementById(
+"listUrl"
+)
+.value;
 
-                const href =
+const selector=
 
-                    a.href;
+document
+.getElementById(
+"linkSelector"
+)
+.value;
 
-                const id =
+const mode=
 
-                    extractId(
+document
+.getElementById(
+"extractMode"
+)
+.value;
 
-                        href,
+const param=
 
-                        extractMode
+document
+.getElementById(
+"paramName"
+)
+.value;
 
-                    );
+const regex=
 
-                if (
-                    id
-                )
-                    ids.push(
-                        id
-                    );
+document
+.getElementById(
+"regex"
+)
+.value;
 
-            }
 
-        );
+const response=
 
-    return [
+await fetch(
+listUrl
+);
 
-        ...new Set(
-            ids
-        )
+const html=
 
-    ];
+await response.text();
+
+console.log(html.substring(0, 3000));
+
+const dom=
+
+new DOMParser()
+
+.parseFromString(
+
+html,
+
+"text/html"
+
+);
+
+console.log(
+    "링크 수:",
+    dom.querySelectorAll(selector).length
+);
+
+const base=
+
+new URL(
+listUrl
+);
+
+const ids=[];
+
+dom
+
+.querySelectorAll(
+selector
+)
+
+.forEach(
+
+node=>{
+
+const raw=
+
+node.getAttribute(
+"href"
+);
+
+console.log(
+    "href:",
+    raw
+);
+
+if(
+!raw)
+return;
+
+
+// 상대주소 → 절대주소 변환
+const href=
+
+new URL(
+
+raw,
+
+base
+
+)
+
+.toString();
+
+
+const id=
+
+extractId(
+
+href,
+
+mode,
+
+param,
+
+regex
+
+);
+
+
+if(
+
+id!==null
+
+&&
+
+!ids.includes(
+id
+)
+
+){
+
+ids.push(
+id
+);
+
+}
+
+}
+
+);
+
+
+return ids;
 
 }

@@ -29,12 +29,15 @@
         }
 
         button {
-            margin-top: 14px;
-            margin-right: 10px;
+            margin-top: 10px;
         }
 
-        #count {
-            margin-left: 10px;
+        #status {
+            margin-top: 10px;
+        }
+
+        .hidden {
+            display: none;
         }
     </style>
 
@@ -96,47 +99,84 @@
 
     </label>
 
-    <label>
+    <div id="crawlArea">
 
-        목록 주소
+        <label>
 
-        <input id="listUrl">
+            목록 주소
 
-    </label>
+            <input id="listUrl">
 
-    <label>
+        </label>
 
-        번호 추출 방식
+        <label>
 
-        <select id="extractMode">
+            게시글 선택자
 
-            <option value="path">
+            <input id="linkSelector"
+                   value="a">
 
-                주소 마지막 숫자
+        </label>
 
-            </option>
+        <label>
 
-            <option value="query">
+            번호 추출 방식
 
-                ?id=123
+            <select id="extractMode">
 
-            </option>
+                <option value="path">
 
-        </select>
+                    마지막 숫자
 
-    </label>
+                </option>
 
-    <button id="refreshIds">
+                <option value="param">
 
-        목록 새로고침
+                    URL 파라미터
 
-    </button>
+                </option>
 
-    <span id="count">
+                <option value="regex">
 
-        0개 수집됨
+                    정규식
 
-    </span>
+                </option>
+
+            </select>
+
+        </label>
+
+        <label>
+
+            파라미터명
+
+            <input id="paramName"
+                   value="number">
+
+        </label>
+
+        <label>
+
+            정규식
+
+            <input id="regex"
+                   placeholder="number=(\d+)">
+
+        </label>
+
+        <button id="refreshIds">
+
+            목록 새로고침
+
+        </button>
+
+        <div id="status">
+
+            0개 수집됨
+
+        </div>
+
+    </div>
 
     <label>
 
@@ -177,7 +217,7 @@
 
     <label>
 
-        간격(초)
+        간격
 
         <input id="interval"
                value="10">
