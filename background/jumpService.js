@@ -78,23 +78,20 @@ function generateRandom(
         mode === "mix"
     ) {
 
-        return
-
-        Math.random()
-
+        if (
+            Math.random()
             > 0.5
+        ) {
 
-            ?
-
-            randomString(
-                length
-            )
-
-            :
-
-            randomNumber(
+            return randomString(
                 length
             );
+
+        }
+
+        return randomNumber(
+            length
+        );
 
     }
 
