@@ -202,6 +202,16 @@ export async function saveProfile() {
                 "generator"
             ).value,
 
+        boardFilter:
+            el(
+                "boardFilter"
+            )?.value
+
+
+            ||
+
+            "",
+
         listUrl:
             el(
                 "listUrl"

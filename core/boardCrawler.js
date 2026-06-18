@@ -1,246 +1,299 @@
 function extractId(
-url,
-mode,
-paramName,
-regex
-){
+    url,
+    mode,
+    param,
+    regex
+) {
 
-try{
+    try {
 
-if(
-mode==="param"
-){
+        if (
+            mode === "param"
+        ) {
 
-const u=
-new URL(
-url
-);
+            const u =
+                new URL(
+                    url
+                );
 
-const value=
+            const value =
 
-u.searchParams.get(
-paramName
-);
+                u.searchParams.get(
+                    param
+                );
 
-return value
-?
-Number(
-value
-)
-:
-null;
+            if (
+
+                value === null
+
+                ||
+
+                value === ""
+
+            ) {
+
+                return null;
+
+            }
+
+            return Number(
+                value
+            );
+
+        }
+
+
+        if (
+            mode === "regex"
+        ) {
+
+            const m =
+
+                url.match(
+
+                    new RegExp(
+                        regex)
+
+                );
+
+            if (
+                !m
+            )
+                return null;
+
+            return Number(
+                m[1]);
+
+        }
+
+
+        // path ë°©ì‹
+        const m =
+
+            url.match(
+
+                /\/(\d+)/
+
+            );
+
+        if (
+            !m
+        )
+            return null;
+
+        return Number(
+            m[1]);
+
+    }
+
+    catch (
+    e
+    ) {
+
+        console.log(
+            "ì¶”ì¶œì‹¤íŒ¨",
+            url,
+            e
+        );
+
+        return null;
+
+    }
 
 }
 
-if(
-mode==="regex"
-){
 
-const m=
 
-url.match(
+export async function crawlBoard() {
 
-new RegExp(
-regex)
+    const listUrl =
+        document.getElementById(
+            "listUrl"
+        ).value;
 
-);
+    const selector =
+        document.getElementById(
+            "linkSelector"
+        ).value;
 
-return m
-?
-Number(
-m[1]
-)
-:
-null;
+    const boardFilter =
+        document.getElementById(
+            "boardFilter"
+        ).value;
 
-}
+    const mode =
+        document.getElementById(
+            "extractMode"
+        ).value;
 
-const m=
+    const param =
+        document.getElementById(
+            "paramName"
+        ).value;
 
-url.match(
+    const regex =
+        document.getElementById(
+            "regex"
+        ).value;
 
-/\/(\d+)\/?$/
 
-);
+    const response =
 
-return m
-?
-Number(
-m[1]
-)
-:
-null;
+        await fetch(
+            listUrl
+        );
 
-}
+    const html =
 
-catch{
+        await response.text();
 
-return null;
 
-}
+    const dom =
 
-}
+        new DOMParser()
 
+            .parseFromString(
 
+                html,
 
-export async function crawlBoard(){
+                "text/html"
 
-const listUrl=
+            );
 
-document
-.getElementById(
-"listUrl"
-)
-.value;
 
-const selector=
+    const base =
 
-document
-.getElementById(
-"linkSelector"
-)
-.value;
+        new URL(
+            listUrl
+        );
 
-const mode=
+    const ids = [];
 
-document
-.getElementById(
-"extractMode"
-)
-.value;
 
-const param=
+    const links =
 
-document
-.getElementById(
-"paramName"
-)
-.value;
+        dom.querySelectorAll(
+            selector
+        );
 
-const regex=
 
-document
-.getElementById(
-"regex"
-)
-.value;
+    console.log(
+        "ì „ì²´ ë§í¬:",
+        links.length
+    );
 
 
-const response=
+    links.forEach(
 
-await fetch(
-listUrl
-);
+        node => {
 
-const html=
+            const raw =
 
-await response.text();
+                node.getAttribute(
+                    "href"
+                );
 
-console.log(html.substring(0, 3000));
+            if (
+                !raw)
+                return;
 
-const dom=
 
-new DOMParser()
+            let href;
 
-.parseFromString(
 
-html,
+            try {
 
-"text/html"
+                href =
 
-);
+                    new URL(
 
-console.log(
-    "¸µÅ© ¼ö:",
-    dom.querySelectorAll(selector).length
-);
+                        raw,
 
-const base=
+                        base
 
-new URL(
-listUrl
-);
+                    )
 
-const ids=[];
+                        .toString();
 
-dom
+            }
 
-.querySelectorAll(
-selector
-)
+            catch {
 
-.forEach(
+                return;
 
-node=>{
+            }
 
-const raw=
 
-node.getAttribute(
-"href"
-);
+            // ê²Œì‹œíŒ í•„í„°
+            if (
 
-console.log(
-    "href:",
-    raw
-);
+                boardFilter
 
-if(
-!raw)
-return;
+                &&
 
+                !href.includes(
+                    boardFilter
+                )
 
-// »ó´ëÁÖ¼Ò ¡æ Àý´ëÁÖ¼Ò º¯È¯
-const href=
+            ) {
 
-new URL(
+                return;
 
-raw,
+            }
 
-base
 
-)
+            const id =
 
-.toString();
+                extractId(
 
+                    href,
 
-const id=
+                    mode,
 
-extractId(
+                    param,
 
-href,
+                    regex
 
-mode,
+                );
 
-param,
 
-regex
+            // 0 ì œê±°
+            if (
 
-);
+                Number.isFinite(
+                    id
+                )
 
+                &&
 
-if(
+                id > 0
 
-id!==null
+                &&
 
-&&
+                !ids.includes(
+                    id
+                )
 
-!ids.includes(
-id
-)
+            ) {
 
-){
+                ids.push(
+                    id
+                );
 
-ids.push(
-id
-);
+            }
 
-}
+        }
 
-}
 
-);
+    );
 
 
-return ids;
+    console.log(
+        "ì¶”ì¶œ:",
+        ids
+    );
+
+
+    return ids;
 
 }

@@ -35,10 +35,6 @@
         #status {
             margin-top: 10px;
         }
-
-        .hidden {
-            display: none;
-        }
     </style>
 
 </head>
@@ -54,7 +50,9 @@
         <select id="profileList">
 
             <option value="">
+
                 새 프로필
+
             </option>
 
         </select>
@@ -99,6 +97,7 @@
 
     </label>
 
+
     <div id="crawlArea">
 
         <label>
@@ -120,15 +119,19 @@
 
         <label>
 
+            게시판 필터
+            (없으면 전체)
+
+            <input id="boardFilter"
+                   placeholder="id=eee">
+
+        </label>
+
+        <label>
+
             번호 추출 방식
 
             <select id="extractMode">
-
-                <option value="path">
-
-                    마지막 숫자
-
-                </option>
 
                 <option value="param">
 
@@ -139,6 +142,12 @@
                 <option value="regex">
 
                     정규식
+
+                </option>
+
+                <option value="path">
+
+                    마지막 숫자
 
                 </option>
 
@@ -159,8 +168,7 @@
 
             정규식
 
-            <input id="regex"
-                   placeholder="number=(\d+)">
+            <input id="regex">
 
         </label>
 
@@ -177,6 +185,7 @@
         </div>
 
     </div>
+
 
     <label>
 
