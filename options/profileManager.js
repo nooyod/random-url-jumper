@@ -185,12 +185,38 @@ export async function saveProfile() {
                 "temp"
             );
 
+    const profileName =
+
+        el(
+            "profileName"
+        )
+
+            .value
+
+            .trim();
+
+
+    if (
+        !profileName
+    ) {
+
+        alert(
+            "프로필 이름을 입력해주세요."
+        );
+
+        el(
+            "profileName"
+        )
+            .focus();
+
+        return;
+
+    }
+
     const item = {
 
         name:
-            el(
-                "profileName"
-            ).value,
+            profileName,
 
         baseUrl:
             el(
