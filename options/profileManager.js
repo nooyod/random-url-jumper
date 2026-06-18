@@ -212,6 +212,26 @@ export async function saveProfile() {
 
             "",
 
+        pageParam:
+            el(
+                "pageParam"
+            )?.value
+            ||
+            "pg",
+
+        maxPages:
+            Number(
+
+                el(
+                    "maxPages"
+                )?.value
+
+                ||
+
+                10
+
+            ),
+
         listUrl:
             el(
                 "listUrl"

@@ -23,22 +23,12 @@ function extractId(
                 );
 
             if (
-
-                value === null
-
-                ||
-
-                value === ""
-
-            ) {
-
+                !value
+            )
                 return null;
 
-            }
-
             return Number(
-                value
-            );
+                value);
 
         }
 
@@ -56,18 +46,17 @@ function extractId(
 
                 );
 
-            if (
-                !m
-            )
-                return null;
-
-            return Number(
-                m[1]);
+            return m
+                ?
+                Number(
+                    m[1]
+                )
+                :
+                null;
 
         }
 
 
-        // path 방식
         const m =
 
             url.match(
@@ -76,25 +65,17 @@ function extractId(
 
             );
 
-        if (
-            !m
-        )
-            return null;
-
-        return Number(
-            m[1]);
+        return m
+            ?
+            Number(
+                m[1]
+            )
+            :
+            null;
 
     }
 
-    catch (
-    e
-    ) {
-
-        console.log(
-            "추출실패",
-            url,
-            e
-        );
+    catch {
 
         return null;
 
@@ -104,48 +85,26 @@ function extractId(
 
 
 
-export async function crawlBoard() {
-
-    const listUrl =
-        document.getElementById(
-            "listUrl"
-        ).value;
-
-    const selector =
-        document.getElementById(
-            "linkSelector"
-        ).value;
-
-    const boardFilter =
-        document.getElementById(
-            "boardFilter"
-        ).value;
-
-    const mode =
-        document.getElementById(
-            "extractMode"
-        ).value;
-
-    const param =
-        document.getElementById(
-            "paramName"
-        ).value;
-
-    const regex =
-        document.getElementById(
-            "regex"
-        ).value;
-
-
-    const response =
-
-        await fetch(
-            listUrl
-        );
+async function crawlPage(
+    pageUrl,
+    selector,
+    boardFilter,
+    mode,
+    param,
+    regex
+) {
 
     const html =
 
-        await response.text();
+        await (
+
+            await fetch(
+                pageUrl
+            )
+
+        )
+
+            .text();
 
 
     const dom =
@@ -164,136 +123,303 @@ export async function crawlBoard() {
     const base =
 
         new URL(
-            listUrl
+            pageUrl
         );
 
     const ids = [];
 
 
-    const links =
+    dom
 
-        dom.querySelectorAll(
+        .querySelectorAll(
             selector
+        )
+
+        .forEach(
+
+            node => {
+
+                const raw =
+
+                    node.getAttribute(
+                        "href"
+                    );
+
+                if (
+                    !raw)
+                    return;
+
+
+                let href;
+
+
+                try {
+
+                    href =
+
+                        new URL(
+
+                            raw,
+
+                            base
+
+                        )
+
+                            .toString();
+
+                }
+
+                catch {
+
+                    return;
+
+                }
+
+
+                if (
+
+                    boardFilter
+
+                    &&
+
+                    !href.includes(
+                        boardFilter
+                    )
+
+                ) {
+
+                    return;
+
+                }
+
+
+                const id =
+
+                    extractId(
+
+                        href,
+
+                        mode,
+
+                        param,
+
+                        regex
+
+                    );
+
+
+                if (
+
+                    Number.isFinite(
+                        id
+                    )
+
+                    &&
+
+                    id > 0
+
+                    &&
+
+                    !ids.includes(
+                        id
+                    )
+
+                ) {
+
+                    ids.push(
+                        id
+                    );
+
+                }
+
+            }
+
         );
 
 
-    console.log(
-        "전체 링크:",
-        links.length
-    );
+    return ids;
+
+}
 
 
-    links.forEach(
 
-        node => {
-
-            const raw =
-
-                node.getAttribute(
-                    "href"
-                );
-
-            if (
-                !raw)
-                return;
+export async function crawlBoard() {
 
 
-            let href;
+    // DOM 읽기
+    const listUrl =
+
+        document
+            .getElementById(
+                "listUrl"
+            )
+            .value;
+
+    const selector =
+
+        document
+            .getElementById(
+                "linkSelector"
+            )
+            .value;
+
+    const boardFilter =
+
+        document
+            .getElementById(
+                "boardFilter"
+            )
+            .value;
+
+    const mode =
+
+        document
+            .getElementById(
+                "extractMode"
+            )
+            .value;
+
+    const param =
+
+        document
+            .getElementById(
+                "paramName"
+            )
+            .value;
+
+    const regex =
+
+        document
+            .getElementById(
+                "regex"
+            )
+            .value;
+
+    const pageParam =
+
+        document
+            .getElementById(
+                "pageParam"
+            )
+            .value
+
+        ||
+
+        "page";
 
 
-            try {
+    const maxPages =
 
-                href =
+        Number(
 
-                    new URL(
-
-                        raw,
-
-                        base
-
-                    )
-
-                        .toString();
-
-            }
-
-            catch {
-
-                return;
-
-            }
-
-
-            // 게시판 필터
-            if (
-
-                boardFilter
-
-                &&
-
-                !href.includes(
-                    boardFilter
+            document
+                .getElementById(
+                    "maxPages"
                 )
+                .value
 
-            ) {
+            ||
 
-                return;
+            10
 
-            }
-
-
-            const id =
-
-                extractId(
-
-                    href,
-
-                    mode,
-
-                    param,
-
-                    regex
-
-                );
+        );
 
 
-            // 0 제거
-            if (
+    const result = [];
 
-                Number.isFinite(
-                    id
-                )
 
-                &&
+    for (
 
-                id > 0
+        let page = 0;
 
-                &&
+        page < maxPages;
 
-                !ids.includes(
-                    id
-                )
+        page++
 
-            ) {
+    ) {
 
-                ids.push(
-                    id
-                );
+        const url =
 
-            }
+            new URL(
+                listUrl
+            );
+
+
+        // 페이지 변경
+        url.searchParams.set(
+
+            pageParam,
+
+            page
+
+        );
+
+
+        console.log(
+
+            "수집:",
+
+            url.toString()
+
+        );
+
+
+        const ids =
+
+            await crawlPage(
+
+                url.toString(),
+
+                selector,
+
+                boardFilter,
+
+                mode,
+
+                param,
+
+                regex
+
+            );
+
+
+        console.log(
+
+            page,
+
+            "페이지:",
+
+            ids.length
+
+        );
+
+
+        if (
+
+            ids.length === 0
+
+        ) {
+
+            break;
 
         }
 
 
-    );
+        result.push(
+
+            ...ids
+
+        );
+
+    }
 
 
-    console.log(
-        "추출:",
-        ids
-    );
+    return [
 
+        ...new Set(
+            result
+        )
 
-    return ids;
+    ];
 
 }
