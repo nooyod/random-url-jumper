@@ -111,17 +111,46 @@ export async function jump(
             .local
             .get();
 
+    // 현재 설정과 같은 주소의 프로필 찾기
+    const profile =
+
+        settings
+            .profiles
+
+            ?.find(
+
+                p =>
+
+                    p.baseUrl ===
+
+                    settings.baseUrl
+
+            )
+
+        ||
+
+        settings
+            .profiles
+
+        ?.[0];
+
+
+    console.log(
+        "PROFILE",
+        profile
+    );
+
     let value;
 
 
     // 목록 기반
     if (
 
-        settings.generator === "crawl"
+        profile.generator === "crawl"
 
         &&
 
-        settings.cachedIds
+        profile.cachedIds
 
             ?.length
 
@@ -131,7 +160,7 @@ export async function jump(
 
             String(
 
-                settings.cachedIds[
+                profile.cachedIds[
 
                 Math.floor(
 
@@ -139,7 +168,7 @@ export async function jump(
 
                     *
 
-                    settings.cachedIds.length
+                    profile.cachedIds.length
 
                 )
 
@@ -156,9 +185,9 @@ export async function jump(
 
             generateRandom(
 
-                settings.mode,
+                profile.mode,
 
-                settings.length
+                profile.length
 
             );
 
@@ -166,13 +195,13 @@ export async function jump(
 
     const url =
 
-        settings.baseUrl +
+        profile.baseUrl +
 
         value +
 
         (
 
-            settings.suffix
+            profile.suffix
 
             ||
 
