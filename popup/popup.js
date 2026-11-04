@@ -7,40 +7,109 @@ const jumpBtn = document.getElementById("jump");
 const settingsBtn = document.getElementById("settings");
 const statusBadge = document.getElementById("statusBadge");
 
+// 카운트다운 관련 DOM 요소
+const countdownCard = document.getElementById("countdownCard");
+const countdownNumber = document.getElementById("countdownNumber");
+const countdownProgressBar = document.getElementById("countdownProgressBar");
+
+let countdownIntervalId = null;
+
 /**
- * 팝업 UI 상태를 갱신합니다.
+ * 실시간 카운트다운 타이머 시작
  */
-function updateUiStatus(isRunning, interval = 10) {
-  if (isRunning) {
-    statusBadge.textContent = `작동 중 (${interval}초)`;
-    statusBadge.className = "badge running";
-    startBtn.disabled = true;
-    stopBtn.disabled = false;
-  } else {
-    statusBadge.textContent = "정지됨";
-    statusBadge.className = "badge idle";
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
+function startCountdown(nextJumpTime, interval = 10) {
+  if (countdownIntervalId !== null) {
+    clearInterval(countdownIntervalId);
+    countdownIntervalId = null;
   }
+
+  countdownCard.style.display = "block";
+  startBtn.disabled = true;
+  stopBtn.disabled = false;
+  statusBadge.className = "badge running";
+
+  const totalDurationMs = Math.max(1, Number(interval) || 10) * 1000;
+
+  const update = () => {
+    const remainingMs = nextJumpTime - Date.now();
+    const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000));
+
+    if (remainingMs <= 0) {
+      countdownNumber.textContent = "0";
+      countdownProgressBar.style.width = "0%";
+      statusBadge.textContent = "이동 중...";
+    } else {
+      countdownNumber.textContent = String(remainingSec);
+      statusBadge.textContent = `${remainingSec}초 남음`;
+      const progressPercent = Math.max(0, Math.min(100, (remainingMs / totalDurationMs) * 100));
+      countdownProgressBar.style.width = `${progressPercent}%`;
+    }
+  };
+
+  update();
+  countdownIntervalId = setInterval(update, 100);
 }
 
-// 1. 프로필 로드 및 현재 스케줄러 상태 동기화
-await loadProfiles();
+/**
+ * 카운트다운 타이머 정지 및 초기화
+ */
+function stopCountdown() {
+  if (countdownIntervalId !== null) {
+    clearInterval(countdownIntervalId);
+    countdownIntervalId = null;
+  }
 
-chrome.runtime.sendMessage({ action: "getStatus" }, (response) => {
-  if (chrome.runtime.lastError || !response) {
-    updateUiStatus(false);
+  countdownCard.style.display = "none";
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+  statusBadge.textContent = "정지됨";
+  statusBadge.className = "badge idle";
+}
+
+/**
+ * UI 상태 동기화
+ */
+function syncUiState(status) {
+  if (!status || !status.running) {
+    stopCountdown();
     return;
   }
-  updateUiStatus(response.running, response.interval);
+
+  const nextJump = status.nextJumpTime || (Date.now() + (status.interval || 10) * 1000);
+  startCountdown(nextJump, status.interval || 10);
+}
+
+// 1. 프로필 목록 로드
+await loadProfiles();
+
+// 2. 현재 스케줄러 상태 확인 및 초기화
+chrome.runtime.sendMessage({ action: "getStatus" }, (response) => {
+  if (chrome.runtime.lastError || !response) {
+    stopCountdown();
+    return;
+  }
+  syncUiState(response);
 });
 
-// 2. 프로필 변경 이벤트
+// 3. 백그라운드 세션 변경 실시간 감지 (다음 점프 시각 갱신 시 자동 리셋)
+chrome.storage.session.onChanged.addListener((changes) => {
+  if (changes.running?.newValue === false) {
+    stopCountdown();
+  } else if (changes.nextJumpTime?.newValue) {
+    chrome.storage.session.get(null).then((data) => {
+      if (data.running) {
+        startCountdown(data.nextJumpTime, data.interval || 10);
+      }
+    });
+  }
+});
+
+// 4. 프로필 변경 이벤트
 profileSelect.addEventListener("change", async () => {
   await applyProfile();
 });
 
-// 3. 시작 버튼
+// 5. 시작 버튼 클릭
 startBtn.addEventListener("click", async () => {
   const profile = await applyProfile();
   if (!profile) {
@@ -50,27 +119,29 @@ startBtn.addEventListener("click", async () => {
 
   chrome.runtime.sendMessage({ action: "start" }, (res) => {
     if (res?.ok) {
-      updateUiStatus(true, profile.interval || 10);
+      chrome.runtime.sendMessage({ action: "getStatus" }, (status) => {
+        syncUiState(status);
+      });
     }
   });
 });
 
-// 4. 정지 버튼
+// 6. 정지 버튼 클릭
 stopBtn.addEventListener("click", () => {
   chrome.runtime.sendMessage({ action: "stop" }, (res) => {
     if (res?.ok) {
-      updateUiStatus(false);
+      stopCountdown();
     }
   });
 });
 
-// 5. 즉시 이동 버튼
+// 7. 즉시 이동 버튼 클릭
 jumpBtn.addEventListener("click", async () => {
   await applyProfile();
   chrome.runtime.sendMessage({ action: "jump" });
 });
 
-// 6. 설정 버튼
+// 8. 설정 페이지 열기
 settingsBtn.addEventListener("click", () => {
   chrome.runtime.openOptionsPage();
 });

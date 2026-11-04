@@ -13,6 +13,17 @@ function scheduleNext(seconds) {
     currentTimer = null;
   }
 
+  const intervalSeconds = Math.max(1, Number(seconds) || 10);
+  const nextJumpTime = Date.now() + intervalSeconds * 1000;
+
+  // 세션 스토리지에 다음 점프 목표 시각 기록 (팝업 카운트다운용)
+  chrome.storage.session.set({
+    running: true,
+    tabId: activeTabId,
+    interval: intervalSeconds,
+    nextJumpTime
+  });
+
   currentTimer = setTimeout(async () => {
     currentTimer = null;
 
@@ -27,12 +38,12 @@ function scheduleNext(seconds) {
       await jumpCallback(activeTabId);
 
       // 다음 점프 예약
-      scheduleNext(seconds);
+      scheduleNext(intervalSeconds);
     } catch (err) {
       console.warn("[Scheduler] 탭 확인 실패, 스케줄러 중단:", err);
       await stop("tab_closed");
     }
-  }, Math.max(1, seconds) * 1000);
+  }, intervalSeconds * 1000);
 }
 
 /**
@@ -45,27 +56,21 @@ export async function start(seconds, callback) {
 
   const tabs = await chrome.tabs.query({
     active: true,
-    currentWindow: true
+    lastFocusedWindow: true
   });
 
-  if (!tabs.length || !tabs[0].id) {
+  const targetTab = tabs[0] || (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
+
+  if (!targetTab || !targetTab.id) {
     console.warn("[Scheduler] 활성 탭을 찾을 수 없습니다.");
     return false;
   }
 
-  activeTabId = tabs[0].id;
+  activeTabId = targetTab.id;
   jumpCallback = callback;
   const intervalSeconds = Math.max(1, Number(seconds) || 10);
 
-  // 세션 스토리지에 상태 보존
-  await chrome.storage.session.set({
-    running: true,
-    tabId: activeTabId,
-    interval: intervalSeconds,
-    startedAt: Date.now()
-  });
-
-  // 백업 알람 등록 (최소 1분 단위, 워치독 역할)
+  // 백업 알람 등록 (워치독)
   try {
     await chrome.alarms.create(ALARM_NAME, {
       periodInMinutes: Math.max(1, Math.ceil(intervalSeconds / 60))
@@ -105,9 +110,12 @@ export async function stop(reason = "manual") {
  */
 export async function getStatus() {
   const sessionData = await chrome.storage.session.get();
+  const isRunning = Boolean(sessionData.running && currentTimer !== null);
+
   return {
-    running: Boolean(sessionData.running && currentTimer !== null),
+    running: isRunning,
     tabId: sessionData.tabId || activeTabId,
-    interval: sessionData.interval || 10
+    interval: sessionData.interval || 10,
+    nextJumpTime: isRunning ? sessionData.nextJumpTime || null : null
   };
 }
