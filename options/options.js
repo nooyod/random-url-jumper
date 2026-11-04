@@ -10,6 +10,7 @@ import {
   showNotice
 } from "./profileManager.js";
 import { crawlBoard } from "../core/boardCrawler.js";
+import { analyzePostUrl } from "../core/urlAnalyzer.js";
 
 const el = (id) => document.getElementById(id);
 
@@ -45,6 +46,62 @@ el("importFileInput").addEventListener("change", async (e) => {
   if (file) {
     await importSettings(file);
     e.target.value = ""; // 동일 파일 재선택 허용
+  }
+});
+
+// 🪄 4. URL 자동 마법사 (게시글 주소 기반 자동 분석)
+el("analyzeBtn").addEventListener("click", async () => {
+  const sampleUrl = el("sampleUrlInput").value.trim();
+  if (!sampleUrl) {
+    showNotice("분석할 게시글 주소를 먼저 입력해주세요.", true);
+    el("sampleUrlInput").focus();
+    return;
+  }
+
+  const btn = el("analyzeBtn");
+  btn.disabled = true;
+  btn.textContent = "⏳ 분석 중...";
+
+  try {
+    const analyzed = await analyzePostUrl(sampleUrl);
+
+    // 폼 필드 자동 입력
+    el("profileName").value = analyzed.name || "새 게시판 탐색";
+    el("baseUrl").value = analyzed.baseUrl || "";
+    el("suffix").value = analyzed.suffix || "";
+    el("interval").value = analyzed.interval || 10;
+
+    // 크롤링 모드로 전환
+    el("generator").value = "crawl";
+    el("generator").dispatchEvent(new Event("change"));
+
+    el("listUrl").value = analyzed.listUrl || "";
+    el("linkSelector").value = analyzed.linkSelector || "a";
+    el("boardFilter").value = analyzed.boardFilter || "";
+    el("pageParam").value = analyzed.pageParam || "page";
+    el("startPage").value = analyzed.startPage || 1;
+    el("maxPages").value = analyzed.maxPages || 5;
+
+    el("extractMode").value = analyzed.extractMode || "param";
+    el("paramName").value = analyzed.paramName || "id";
+    el("regex").value = analyzed.regex || "";
+    el("extractMode").dispatchEvent(new Event("change"));
+
+    showNotice(`분석 성공: '${analyzed.name}' 설정이 자동으로 채워졌습니다! [설정 저장]을 눌러 완료하세요.`);
+  } catch (err) {
+    console.error("[Analyzer] 에러:", err);
+    showNotice(`URL 분석 실패: ${err.message}`, true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "⚡ 자동 분석";
+  }
+});
+
+// 엔터 키로도 자동 분석 실행
+el("sampleUrlInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    el("analyzeBtn").click();
   }
 });
 

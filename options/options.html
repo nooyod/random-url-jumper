@@ -76,6 +76,43 @@
       flex: 1;
       min-width: 140px;
     }
+    .wizard-card {
+      background: #e8f0fe;
+      border: 1px solid #c2e7ff;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+    }
+    .wizard-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1967d2;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .wizard-desc {
+      font-size: 12px;
+      color: #3c4043;
+      margin-bottom: 10px;
+    }
+    .wizard-input-group {
+      display: flex;
+      gap: 8px;
+    }
+    .wizard-input-group input {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 13px;
+      border: 1px solid #b7d1fb;
+      border-radius: 6px;
+      background: #fff;
+      outline: none;
+    }
+    .wizard-input-group input:focus {
+      border-color: #1a73e8;
+    }
     .section-title {
       font-size: 15px;
       font-weight: 600;
@@ -219,6 +256,16 @@
       <button id="newProfileBtn" type="button" class="btn-secondary">새로 만들기</button>
       <button id="exportSingleBtn" type="button" class="btn-secondary" title="현재 선택된 프로필 1개만 파일로 내보냅니다.">📤 이 프로필 내보내기</button>
       <button id="deleteBtn" type="button" class="btn-danger">삭제</button>
+    </div>
+
+    <!-- 🪄 URL 자동 마법사 카드 -->
+    <div class="wizard-card">
+      <div class="wizard-title">🪄 URL 자동 마법사 (추천)</div>
+      <div class="wizard-desc">자주 보는 커뮤니티의 <b>게시글 주소 1개</b>만 붙여넣으면 모든 설정(기본 주소, 목록 주소, 추출 방식 등)을 자동으로 분석하여 채워줍니다.</div>
+      <div class="wizard-input-group">
+        <input id="sampleUrlInput" type="text" placeholder="예: https://gall.dcinside.com/board/view/?id=game&no=12345">
+        <button id="analyzeBtn" type="button" class="btn-primary" style="white-space: nowrap;">⚡ 자동 분석</button>
+      </div>
     </div>
 
     <form id="profileForm" onsubmit="return false;">
