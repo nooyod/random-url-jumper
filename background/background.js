@@ -1,10 +1,22 @@
 import { jump } from "./jumpService.js";
-import { start, stop, getStatus } from "./scheduler.js";
+import { start, stop, getStatus, resetCountdown } from "./scheduler.js";
+
+/**
+ * 이동을 실행하고, 자동 점프가 실행 중인 경우 카운트다운 타이머를 전체 주기로 리셋합니다.
+ */
+async function handleJump(targetTabId = null) {
+  const success = await jump(targetTabId);
+  if (success) {
+    // 자동 점프가 켜져 있다면 다음 이동 타이머를 처음부터 다시 카운트하도록 리셋
+    await resetCountdown();
+  }
+  return success;
+}
 
 // 메시지 수신 핸들러 (Popup 및 Options와 통신)
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action === "jump") {
-    jump().then((success) => sendResponse({ ok: success }));
+    handleJump().then((success) => sendResponse({ ok: success }));
     return true; // 비동기 응답 대기
   }
 
@@ -30,11 +42,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 });
 
 // 단축키 핸들러 (Ctrl+Shift+Y)
-// Chrome 109+에서는 두 번째 인자로 현재 활성 tab 객체가 직접 전달됩니다.
 chrome.commands.onCommand.addListener(async (command, tab) => {
   if (command === "jump_now") {
     console.log("[Background] 단축키 'jump_now' 감지, 탭 ID:", tab?.id);
-    await jump(tab?.id);
+    await handleJump(tab?.id);
   }
 });
 

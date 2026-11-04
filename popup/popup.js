@@ -154,10 +154,16 @@ stopBtn.addEventListener("click", () => {
   });
 });
 
-// 7. 즉시 이동 버튼 클릭
+// 7. 즉시 이동 버튼 클릭 (카운트다운 즉시 리셋 동기화)
 jumpBtn.addEventListener("click", async () => {
   await applyProfile();
-  chrome.runtime.sendMessage({ action: "jump" });
+  chrome.runtime.sendMessage({ action: "jump" }, (res) => {
+    if (res?.ok) {
+      chrome.runtime.sendMessage({ action: "getStatus" }, (status) => {
+        syncUiState(status);
+      });
+    }
+  });
 });
 
 // 8. 설정 페이지 열기
