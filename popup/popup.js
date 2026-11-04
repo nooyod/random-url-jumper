@@ -6,6 +6,7 @@ const stopBtn = document.getElementById("stop");
 const jumpBtn = document.getElementById("jump");
 const settingsBtn = document.getElementById("settings");
 const statusBadge = document.getElementById("statusBadge");
+const popoutBtn = document.getElementById("popoutBtn");
 
 // 카운트다운 관련 DOM 요소
 const countdownCard = document.getElementById("countdownCard");
@@ -14,6 +15,18 @@ const countdownProgressBar = document.getElementById("countdownProgressBar");
 
 let countdownIntervalId = null;
 let isCheckingStatus = false;
+
+// 📌 1. 팝아웃 모드 확인 및 UI 조정
+const urlParams = new URLSearchParams(window.location.search);
+const isPopout = urlParams.get("mode") === "popout";
+
+if (isPopout) {
+  document.body.classList.add("is-popout");
+  document.title = "Random Jumper 리모컨";
+  if (popoutBtn) {
+    popoutBtn.style.display = "none"; // 이미 분리된 창에서는 팝아웃 버튼 숨김
+  }
+}
 
 /**
  * 실시간 카운트다운 타이머 시작
@@ -95,10 +108,10 @@ function syncUiState(status) {
   startCountdown(nextJump, status.interval || 10);
 }
 
-// 1. 프로필 목록 로드
+// 2. 프로필 목록 로드
 await loadProfiles();
 
-// 2. 현재 스케줄러 상태 확인 및 초기화
+// 3. 현재 스케줄러 상태 확인 및 초기화
 chrome.runtime.sendMessage({ action: "getStatus" }, (response) => {
   if (chrome.runtime.lastError || !response) {
     stopCountdown();
@@ -107,7 +120,7 @@ chrome.runtime.sendMessage({ action: "getStatus" }, (response) => {
   syncUiState(response);
 });
 
-// 3. 백그라운드 세션 스토리지 변경 실시간 감지 (올바른 chrome.storage.onChanged API 사용)
+// 4. 백그라운드 세션 스토리지 변경 실시간 감지
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === "session") {
     if (changes.running?.newValue === false) {
@@ -123,12 +136,12 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   }
 });
 
-// 4. 프로필 변경 이벤트
+// 5. 프로필 변경 이벤트
 profileSelect.addEventListener("change", async () => {
   await applyProfile();
 });
 
-// 5. 시작 버튼 클릭
+// 6. 시작 버튼 클릭
 startBtn.addEventListener("click", async () => {
   const profile = await applyProfile();
   if (!profile) {
@@ -145,7 +158,7 @@ startBtn.addEventListener("click", async () => {
   });
 });
 
-// 6. 정지 버튼 클릭
+// 7. 정지 버튼 클릭
 stopBtn.addEventListener("click", () => {
   chrome.runtime.sendMessage({ action: "stop" }, (res) => {
     if (res?.ok) {
@@ -154,7 +167,7 @@ stopBtn.addEventListener("click", () => {
   });
 });
 
-// 7. 즉시 이동 버튼 클릭 (카운트다운 즉시 리셋 동기화)
+// 8. 즉시 이동 버튼 클릭 (카운트다운 즉시 리셋 동기화)
 jumpBtn.addEventListener("click", async () => {
   await applyProfile();
   chrome.runtime.sendMessage({ action: "jump" }, (res) => {
@@ -166,7 +179,21 @@ jumpBtn.addEventListener("click", async () => {
   });
 });
 
-// 8. 설정 페이지 열기
+// 9. 📌 팝아웃 버튼 클릭: 사라지지 않는 독립 미니 창으로 분리
+if (popoutBtn) {
+  popoutBtn.addEventListener("click", () => {
+    chrome.windows.create({
+      url: chrome.runtime.getURL("popup/popup.html?mode=popout"),
+      type: "popup",
+      width: 290,
+      height: 430,
+      focused: true
+    });
+    window.close(); // 기존의 닫히는 팝업창은 닫아줌
+  });
+}
+
+// 10. 설정 페이지 열기
 settingsBtn.addEventListener("click", () => {
   chrome.runtime.openOptionsPage();
 });

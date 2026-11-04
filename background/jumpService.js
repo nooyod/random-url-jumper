@@ -2,8 +2,39 @@ import { generateRandom } from "../core/randomGenerator.js";
 import { buildUrl } from "../core/urlBuilder.js";
 
 /**
+ * 일반 브라우저 창('normal')의 활성 탭을 안전하게 찾습니다.
+ * (팝아웃 창 등 확장 프로그램 팝업 윈도우 제외)
+ */
+async function findActiveNormalTab() {
+  try {
+    // 1. 마지막으로 포커스된 일반 창의 활성 탭
+    const normalWin = await chrome.windows.getLastFocused({
+      windowTypes: ["normal"],
+      populate: true
+    });
+    const activeTab = normalWin?.tabs?.find((t) => t.active);
+    if (activeTab && activeTab.id) {
+      return activeTab.id;
+    }
+  } catch {}
+
+  // 2. 전체 창 중 일반 창의 활성 탭 쿼리
+  try {
+    const normalTabs = await chrome.tabs.query({
+      active: true,
+      windowType: "normal"
+    });
+    if (normalTabs.length > 0 && normalTabs[0].id) {
+      return normalTabs[0].id;
+    }
+  } catch {}
+
+  return null;
+}
+
+/**
  * 활성화된 설정 및 프로필을 기반으로 지정된 탭(또는 현재 활성 탭)을 새 URL로 이동시킵니다.
- * @param {number} [targetTabId] 대상 탭 ID (생략 시 현재 활성 탭 검색)
+ * @param {number} [targetTabId] 대상 탭 ID (생략 시 일반 브라우저 활성 탭 검색)
  */
 export async function jump(targetTabId = null) {
   const settings = await chrome.storage.local.get();
@@ -41,26 +72,23 @@ export async function jump(targetTabId = null) {
   try {
     let tabId = targetTabId;
 
-    // targetTabId가 전달되지 않았을 경우, Service Worker에서 가장 신뢰할 수 있는 lastFocusedWindow로 조회
+    // targetTabId가 전달되지 않았을 경우, 세션 저장 탭 또는 일반 브라우저 창의 활성 탭 조회
     if (!tabId) {
-      const activeTabs = await chrome.tabs.query({
-        active: true,
-        lastFocusedWindow: true
-      });
+      const session = await chrome.storage.session.get("tabId");
+      if (session.tabId) {
+        try {
+          const savedTab = await chrome.tabs.get(session.tabId);
+          if (savedTab) tabId = savedTab.id;
+        } catch {}
+      }
 
-      if (activeTabs.length > 0 && activeTabs[0].id) {
-        tabId = activeTabs[0].id;
-      } else {
-        // 보조 fallback
-        const fallbackTabs = await chrome.tabs.query({
-          active: true,
-          currentWindow: true
-        });
-        if (fallbackTabs.length === 0 || !fallbackTabs[0].id) {
-          console.warn("[JumpService] 이동할 활성 탭을 찾지 못했습니다.");
-          return false;
-        }
-        tabId = fallbackTabs[0].id;
+      if (!tabId) {
+        tabId = await findActiveNormalTab();
+      }
+
+      if (!tabId) {
+        console.warn("[JumpService] 이동할 일반 브라우저 탭을 찾지 못했습니다.");
+        return false;
       }
     }
 

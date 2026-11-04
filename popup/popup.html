@@ -17,6 +17,14 @@
       font-size: 13px;
       color: #333;
       background-color: #fafafa;
+      user-select: none;
+    }
+    /* 📌 팝아웃 미니 윈도우 모드 시 화면 전체 채우기 */
+    body.is-popout {
+      width: 100vw;
+      min-height: 100vh;
+      background-color: #ffffff;
+      padding: 16px;
     }
     .header {
       display: flex;
@@ -30,6 +38,11 @@
       font-size: 14px;
       font-weight: 600;
       color: #202124;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
     .badge {
       font-size: 11px;
@@ -51,6 +64,24 @@
       0% { opacity: 1; }
       50% { opacity: 0.6; }
       100% { opacity: 1; }
+    }
+    .icon-btn {
+      background: none;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      padding: 2px 5px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #5f6368;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.15s, border-color 0.15s;
+    }
+    .icon-btn:hover {
+      background-color: #f1f3f4;
+      border-color: #c6c9cc;
+      color: #202124;
     }
     .field-group {
       margin-bottom: 10px;
@@ -196,7 +227,10 @@
 <body>
   <div class="header">
     <h1>Random Jumper</h1>
-    <span id="statusBadge" class="badge idle">정지됨</span>
+    <div class="header-actions">
+      <span id="statusBadge" class="badge idle">정지됨</span>
+      <button id="popoutBtn" class="icon-btn" title="사라지지 않는 미니 창으로 분리 (고정)">📌</button>
+    </div>
   </div>
 
   <div class="field-group">

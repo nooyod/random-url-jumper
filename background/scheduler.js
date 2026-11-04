@@ -58,15 +58,23 @@ async function scheduleNext(seconds) {
 export async function start(seconds, callback = jump) {
   await stop("restart");
 
-  const tabs = await chrome.tabs.query({
-    active: true,
-    lastFocusedWindow: true
-  });
+  // 팝아웃 미니 창(popup)이 아닌 실제 웹페이지 탭(normal) 조회
+  let targetTab = null;
+  try {
+    const normalWin = await chrome.windows.getLastFocused({
+      windowTypes: ["normal"],
+      populate: true
+    });
+    targetTab = normalWin?.tabs?.find((t) => t.active);
+  } catch {}
 
-  const targetTab = tabs[0] || (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
+  if (!targetTab) {
+    const normalTabs = await chrome.tabs.query({ active: true, windowType: "normal" });
+    targetTab = normalTabs[0];
+  }
 
   if (!targetTab || !targetTab.id) {
-    console.warn("[Scheduler] 활성 탭을 찾을 수 없습니다.");
+    console.warn("[Scheduler] 일반 웹페이지 활성 탭을 찾을 수 없습니다.");
     return false;
   }
 
