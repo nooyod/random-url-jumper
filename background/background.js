@@ -29,11 +29,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 });
 
-// 단축키 핸들러 (Ctrl+Shift+Y 등)
-chrome.commands.onCommand.addListener(async (command) => {
+// 단축키 핸들러 (Ctrl+Shift+Y)
+// Chrome 109+에서는 두 번째 인자로 현재 활성 tab 객체가 직접 전달됩니다.
+chrome.commands.onCommand.addListener(async (command, tab) => {
   if (command === "jump_now") {
-    console.log("[Background] 단축키로 즉시 이동 실행");
-    await jump();
+    console.log("[Background] 단축키 'jump_now' 감지, 탭 ID:", tab?.id);
+    await jump(tab?.id);
   }
 });
 
