@@ -7,7 +7,7 @@ let jumpCallback = null;
 /**
  * 다음 점프를 예약합니다 (초 단위 타이머).
  */
-function scheduleNext(seconds) {
+async function scheduleNext(seconds) {
   if (currentTimer !== null) {
     clearTimeout(currentTimer);
     currentTimer = null;
@@ -17,7 +17,7 @@ function scheduleNext(seconds) {
   const nextJumpTime = Date.now() + intervalSeconds * 1000;
 
   // 세션 스토리지에 다음 점프 목표 시각 기록 (팝업 카운트다운용)
-  chrome.storage.session.set({
+  await chrome.storage.session.set({
     running: true,
     tabId: activeTabId,
     interval: intervalSeconds,
@@ -38,7 +38,7 @@ function scheduleNext(seconds) {
       await jumpCallback(activeTabId);
 
       // 다음 점프 예약
-      scheduleNext(intervalSeconds);
+      await scheduleNext(intervalSeconds);
     } catch (err) {
       console.warn("[Scheduler] 탭 확인 실패, 스케줄러 중단:", err);
       await stop("tab_closed");
@@ -80,7 +80,7 @@ export async function start(seconds, callback) {
   }
 
   // 첫 번째 타이머 등록
-  scheduleNext(intervalSeconds);
+  await scheduleNext(intervalSeconds);
   return true;
 }
 

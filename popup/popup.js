@@ -13,6 +13,7 @@ const countdownNumber = document.getElementById("countdownNumber");
 const countdownProgressBar = document.getElementById("countdownProgressBar");
 
 let countdownIntervalId = null;
+let isCheckingStatus = false;
 
 /**
  * 실시간 카운트다운 타이머 시작
@@ -38,7 +39,21 @@ function startCountdown(nextJumpTime, interval = 10) {
       countdownNumber.textContent = "0";
       countdownProgressBar.style.width = "0%";
       statusBadge.textContent = "이동 중...";
+
+      // 0초 도달 시 백그라운드의 다음 주기(nextJumpTime) 갱신을 능동적으로 폴링
+      if (!isCheckingStatus) {
+        isCheckingStatus = true;
+        setTimeout(() => {
+          chrome.runtime.sendMessage({ action: "getStatus" }, (response) => {
+            isCheckingStatus = false;
+            if (response && response.running) {
+              syncUiState(response);
+            }
+          });
+        }, 600);
+      }
     } else {
+      isCheckingStatus = false;
       countdownNumber.textContent = String(remainingSec);
       statusBadge.textContent = `${remainingSec}초 남음`;
       const progressPercent = Math.max(0, Math.min(100, (remainingMs / totalDurationMs) * 100));
@@ -59,6 +74,7 @@ function stopCountdown() {
     countdownIntervalId = null;
   }
 
+  isCheckingStatus = false;
   countdownCard.style.display = "none";
   startBtn.disabled = false;
   stopBtn.disabled = true;
@@ -91,16 +107,19 @@ chrome.runtime.sendMessage({ action: "getStatus" }, (response) => {
   syncUiState(response);
 });
 
-// 3. 백그라운드 세션 변경 실시간 감지 (다음 점프 시각 갱신 시 자동 리셋)
-chrome.storage.session.onChanged.addListener((changes) => {
-  if (changes.running?.newValue === false) {
-    stopCountdown();
-  } else if (changes.nextJumpTime?.newValue) {
-    chrome.storage.session.get(null).then((data) => {
-      if (data.running) {
-        startCountdown(data.nextJumpTime, data.interval || 10);
-      }
-    });
+// 3. 백그라운드 세션 스토리지 변경 실시간 감지 (올바른 chrome.storage.onChanged API 사용)
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === "session") {
+    if (changes.running?.newValue === false) {
+      stopCountdown();
+    } else if (changes.nextJumpTime?.newValue) {
+      const nextJumpTime = changes.nextJumpTime.newValue;
+      chrome.storage.session.get(null).then((data) => {
+        if (data.running) {
+          startCountdown(nextJumpTime, data.interval || 10);
+        }
+      });
+    }
   }
 });
 
