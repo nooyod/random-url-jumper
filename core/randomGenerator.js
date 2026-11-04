@@ -1,47 +1,25 @@
-export function generate(
-    length,
-    mode
-) {
+/**
+ * 무작위 문자열/숫자 생성 모듈
+ */
+const NUMBERS = "0123456789";
+const LETTERS = "abcdefghijklmnopqrstuvwxyz";
+const MIXED = "abcdefghijklmnopqrstuvwxyz0123456789";
 
-    let chars = "";
+export function generateRandom(mode = "number", length = 4) {
+  const safeLength = Math.max(1, Number(length) || 4);
+  let chars = NUMBERS;
 
-    switch (mode) {
+  if (mode === "text") {
+    chars = LETTERS;
+  } else if (mode === "mix") {
+    chars = MIXED;
+  }
 
-        case "number":
+  let result = "";
+  for (let i = 0; i < safeLength; i++) {
+    const randomIndex = Math.floor(Math.random() * chars.length);
+    result += chars[randomIndex];
+  }
 
-            chars =
-                "0123456789";
-
-            break;
-
-        case "text":
-
-            chars =
-                "abcdefghijklmnopqrstuvwxyz";
-
-            break;
-
-        default:
-
-            chars =
-                "abcdefghijklmnopqrstuvwxyz0123456789";
-
-    }
-
-    return [...Array(length)]
-
-        .map(() =>
-
-            chars[
-            Math.floor(
-                Math.random()
-                *
-                chars.length
-            )
-            ]
-
-        )
-
-        .join("");
-
+  return result;
 }

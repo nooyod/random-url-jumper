@@ -1,68 +1,166 @@
 <!DOCTYPE html>
-
-<html>
-
+<html lang="ko">
 <head>
-
-    <meta charset="UTF-8">
-
-    <style>
-
-        body {
-            width: 220px;
-            padding: 10px;
-        }
-
-        select,
-        button {
-            width: 100%;
-            margin-bottom: 8px;
-        }
-    </style>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Random URL Jumper</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      width: 250px;
+      padding: 14px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 13px;
+      color: #333;
+      background-color: #fafafa;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .header h1 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #202124;
+    }
+    .badge {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 500;
+    }
+    .badge.idle {
+      background-color: #e8eaed;
+      color: #5f6368;
+    }
+    .badge.running {
+      background-color: #e6f4ea;
+      color: #137333;
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+    .field-group {
+      margin-bottom: 10px;
+    }
+    label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 12px;
+      color: #5f6368;
+    }
+    select {
+      width: 100%;
+      padding: 7px 8px;
+      font-size: 13px;
+      border: 1px solid #dadce0;
+      border-radius: 6px;
+      background-color: #fff;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    select:focus {
+      border-color: #1a73e8;
+    }
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-top: 12px;
+    }
+    .row {
+      display: flex;
+      gap: 7px;
+    }
+    button {
+      flex: 1;
+      padding: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid #dadce0;
+      border-radius: 6px;
+      background-color: #fff;
+      color: #3c4043;
+      cursor: pointer;
+      transition: background-color 0.15s, border-color 0.15s, opacity 0.15s;
+    }
+    button:hover:not(:disabled) {
+      background-color: #f1f3f4;
+      border-color: #c6c9cc;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    button.primary {
+      background-color: #1a73e8;
+      color: #fff;
+      border-color: #1a73e8;
+    }
+    button.primary:hover:not(:disabled) {
+      background-color: #1557b0;
+      border-color: #1557b0;
+    }
+    button.danger {
+      background-color: #ea4335;
+      color: #fff;
+      border-color: #ea4335;
+    }
+    button.danger:hover:not(:disabled) {
+      background-color: #d93025;
+      border-color: #d93025;
+    }
+    .footer {
+      margin-top: 10px;
+      text-align: right;
+    }
+    .link-btn {
+      background: none;
+      border: none;
+      padding: 4px;
+      color: #1a73e8;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .link-btn:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
-
 <body>
+  <div class="header">
+    <h1>Random Jumper</h1>
+    <span id="statusBadge" class="badge idle">정지됨</span>
+  </div>
 
-    <select id="profile">
+  <div class="field-group">
+    <label for="profile">프로필 선택</label>
+    <select id="profile"></select>
+  </div>
 
-        <option>
+  <div class="btn-group">
+    <div class="row">
+      <button id="start" class="primary">시작</button>
+      <button id="stop" class="danger" disabled>정지</button>
+    </div>
+    <button id="jump">즉시 이동 (Ctrl+Shift+Y)</button>
+  </div>
 
-            프로필 없음
+  <div class="footer">
+    <button id="settings" class="link-btn">⚙️ 상세 설정</button>
+  </div>
 
-        </option>
-
-    </select>
-
-    <button id="start">
-
-        시작
-
-    </button>
-
-    <button id="stop">
-
-        정지
-
-    </button>
-
-    <button id="jump">
-
-        즉시 이동
-
-    </button>
-
-    <button id="settings">
-
-        설정
-
-    </button>
-
-    <script type="module"
-            src="popup.js">
-
-    </script>
-
+  <script type="module" src="popup.js"></script>
 </body>
-
 </html>

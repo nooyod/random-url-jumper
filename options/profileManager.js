@@ -1,397 +1,396 @@
-function el(id) {
-    return document.getElementById(id);
+/**
+ * 프로필 관리 및 UI 바인딩 모듈
+ */
+
+const el = (id) => document.getElementById(id);
+
+/**
+ * 인라인 알림 메시지를 표시합니다.
+ */
+export function showNotice(message, isError = false) {
+  const box = el("noticeMsg");
+  box.textContent = message;
+  box.className = `notice-msg ${isError ? "error" : "success"}`;
+  setTimeout(() => {
+    box.style.display = "none";
+  }, 4000);
 }
 
-async function readProfiles() {
-
-    const data =
-
-        await chrome
-            .storage
-            .local
-            .get(
-                "profiles"
-            );
-
-    return data.profiles || [];
-
+/**
+ * 저장소에서 전체 프로필 목록을 읽어옵니다.
+ */
+export async function readProfiles() {
+  const data = await chrome.storage.local.get("profiles");
+  return data.profiles || [];
 }
 
-async function writeProfiles(
-    profiles
-) {
-
-    await chrome
-        .storage
-        .local
-        .set({
-
-            profiles
-
-        });
-
+/**
+ * 저장소에 전체 프로필 목록을 씁니다.
+ */
+export async function writeProfiles(profiles) {
+  await chrome.storage.local.set({ profiles });
 }
 
+/**
+ * 상단 프로필 선택 드롭다운을 갱신합니다.
+ */
+export async function refreshProfileList(selectedName = "") {
+  const select = el("profileList");
+  select.innerHTML = '<option value="">(새 프로필 만들기)</option>';
 
-export async function refreshProfiles() {
-
-    const list =
-
-        el(
-            "profileList"
-        );
-
-    list.innerHTML =
-
-        `
-<option value="">
-새 프로필
-</option>
-`;
-
-    const profiles =
-
-        await readProfiles();
-
-    profiles.forEach(
-
-        p => {
-
-            const o =
-
-                document.createElement(
-                    "option"
-                );
-
-            o.value =
-                p.name;
-
-            o.textContent =
-                p.name;
-
-            list.appendChild(
-                o);
-
-        }
-
-    );
-
-}
-
-
-export async function loadSelected() {
-
-    const profiles =
-
-        await readProfiles();
-
-    const name =
-
-        el(
-            "profileList"
-        ).value;
-
-    const p =
-
-        profiles.find(
-
-            x =>
-
-                x.name === name
-
-        );
-
-    if (
-        !p
-    )
-        return;
-
-    Object.entries(
-        p
-    )
-
-        .forEach(
-
-            ([k, v]) => {
-
-                const node =
-                    el(k);
-
-                if (
-                    node
-                ) {
-
-                    node.value =
-
-                        v ??
-
-                        "";
-
-                }
-
-            }
-
-        );
-
-    if (
-
-        el(
-            "status"
-        )
-
-    ) {
-
-        el(
-            "status"
-        )
-
-            .innerHTML =
-
-            `
-${p.cachedIds?.length
-
-            ||
-
-            0
-
-            }개 수집됨
-<br>
-${p.crawledAt
-
-            ||
-
-            "-"
-
-            }
-`;
-
+  const profiles = await readProfiles();
+  profiles.forEach((p) => {
+    const opt = document.createElement("option");
+    opt.value = p.name;
+    opt.textContent = p.name;
+    if (p.name === selectedName) {
+      opt.selected = true;
     }
-
+    select.appendChild(opt);
+  });
 }
 
+/**
+ * 폼 필드를 초기화하여 새 프로필을 작성할 수 있도록 합니다.
+ */
+export function resetForm() {
+  el("profileName").value = "";
+  el("baseUrl").value = "";
+  el("suffix").value = "";
+  el("interval").value = "10";
+  el("generator").value = "random";
+  el("mode").value = "number";
+  el("length").value = "4";
 
+  el("listUrl").value = "";
+  el("linkSelector").value = "a";
+  el("boardFilter").value = "";
+  el("pageParam").value = "page";
+  el("startPage").value = "1";
+  el("maxPages").value = "5";
+  el("extractMode").value = "param";
+  el("paramName").value = "id";
+  el("regex").value = "";
+
+  el("idCount").textContent = "0";
+  el("crawlTime").textContent = "-";
+
+  // 영역 전환 이벤트 트리거
+  el("generator").dispatchEvent(new Event("change"));
+  el("extractMode").dispatchEvent(new Event("change"));
+}
+
+/**
+ * 선택된 프로필 데이터를 폼에 채웁니다.
+ */
+export async function loadSelectedProfile() {
+  const name = el("profileList").value;
+  if (!name) {
+    resetForm();
+    return;
+  }
+
+  const profiles = await readProfiles();
+  const p = profiles.find((x) => x.name === name);
+  if (!p) return;
+
+  el("profileName").value = p.name || "";
+  el("baseUrl").value = p.baseUrl || "";
+  el("suffix").value = p.suffix || "";
+  el("interval").value = p.interval ?? 10;
+  el("generator").value = p.generator || "random";
+  el("mode").value = p.mode || "number";
+  el("length").value = p.length ?? 4;
+
+  el("listUrl").value = p.listUrl || "";
+  el("linkSelector").value = p.linkSelector || "a";
+  el("boardFilter").value = p.boardFilter || "";
+  el("pageParam").value = p.pageParam || "page";
+  el("startPage").value = p.startPage ?? 1;
+  el("maxPages").value = p.maxPages ?? 5;
+  el("extractMode").value = p.extractMode || "param";
+  el("paramName").value = p.paramName || "id";
+  el("regex").value = p.regex || "";
+
+  el("idCount").textContent = String(p.cachedIds?.length || 0);
+  el("crawlTime").textContent = p.crawledAt || "-";
+
+  el("generator").dispatchEvent(new Event("change"));
+  el("extractMode").dispatchEvent(new Event("change"));
+}
+
+/**
+ * 현재 폼의 입력을 검증하고 프로필로 저장합니다.
+ */
 export async function saveProfile() {
+  const profileName = el("profileName").value.trim();
+  const baseUrl = el("baseUrl").value.trim();
 
-    const profiles =
+  if (!profileName) {
+    showNotice("프로필 이름을 입력해주세요.", true);
+    el("profileName").focus();
+    return;
+  }
 
-        await readProfiles();
+  if (!baseUrl) {
+    showNotice("기본 주소(Base URL)를 입력해주세요.", true);
+    el("baseUrl").focus();
+    return;
+  }
 
-    const temp =
+  const profiles = await readProfiles();
+  const currentSelectedName = el("profileList").value;
 
-        await chrome
-            .storage
-            .local
-            .get(
-                "temp"
-            );
+  const existingProfile = profiles.find((x) => x.name === currentSelectedName || x.name === profileName);
+  const tempData = await chrome.storage.local.get("tempCrawl");
 
-    const profileName =
+  let cachedIds = existingProfile?.cachedIds || [];
+  let crawledAt = existingProfile?.crawledAt || "-";
 
-        el(
-            "profileName"
-        )
+  if (tempData.tempCrawl) {
+    cachedIds = tempData.tempCrawl.ids || [];
+    crawledAt = tempData.tempCrawl.time || "-";
+    await chrome.storage.local.remove("tempCrawl");
+  }
 
-            .value
+  const profileData = {
+    name: profileName,
+    baseUrl,
+    suffix: el("suffix").value.trim(),
+    interval: Math.max(1, Number(el("interval").value) || 10),
+    generator: el("generator").value,
+    mode: el("mode").value,
+    length: Math.max(1, Number(el("length").value) || 4),
+    listUrl: el("listUrl").value.trim(),
+    linkSelector: el("linkSelector").value.trim() || "a",
+    boardFilter: el("boardFilter").value.trim(),
+    pageParam: el("pageParam").value.trim() || "page",
+    startPage: Math.max(0, Number(el("startPage").value) || 1),
+    maxPages: Math.max(1, Number(el("maxPages").value) || 5),
+    extractMode: el("extractMode").value,
+    paramName: el("paramName").value.trim() || "id",
+    regex: el("regex").value.trim(),
+    cachedIds,
+    crawledAt
+  };
 
-            .trim();
+  const idx = profiles.findIndex((x) => x.name === (currentSelectedName || profileName));
+  if (idx >= 0) {
+    profiles[idx] = profileData;
+  } else {
+    profiles.push(profileData);
+  }
 
+  await writeProfiles(profiles);
 
-    if (
-        !profileName
-    ) {
+  // 저장된 프로필을 활성 프로필로 지정
+  await chrome.storage.local.set({
+    activeProfileName: profileName,
+    baseUrl: profileData.baseUrl,
+    mode: profileData.mode,
+    length: profileData.length,
+    interval: profileData.interval,
+    suffix: profileData.suffix
+  });
 
-        alert(
-            "프로필 이름을 입력해주세요."
-        );
-
-        el(
-            "profileName"
-        )
-            .focus();
-
-        return;
-
-    }
-
-    const item = {
-
-        name:
-            profileName,
-
-        baseUrl:
-            el(
-                "baseUrl"
-            ).value,
-
-        generator:
-            el(
-                "generator"
-            ).value,
-
-        boardFilter:
-            el(
-                "boardFilter"
-            )?.value
-
-
-            ||
-
-            "",
-
-        pageParam:
-            el(
-                "pageParam"
-            )?.value
-            ||
-            "pg",
-
-        maxPages:
-            Number(
-
-                el(
-                    "maxPages"
-                )?.value
-
-                ||
-
-                10
-
-            ),
-
-        listUrl:
-            el(
-                "listUrl"
-            ).value,
-
-        linkSelector:
-            el(
-                "linkSelector"
-            ).value,
-
-        extractMode:
-            el(
-                "extractMode"
-            ).value,
-
-        paramName:
-            el(
-                "paramName"
-            ).value,
-
-        regex:
-            el(
-                "regex"
-            ).value,
-
-        mode:
-            el(
-                "mode"
-            ).value,
-
-        length:
-            Number(
-                el(
-                    "length"
-                ).value
-            ),
-
-        interval:
-            Number(
-                el(
-                    "interval"
-                ).value
-            ),
-
-        suffix:
-            el(
-                "suffix"
-            ).value,
-
-        cachedIds:
-
-            temp.temp?.ids
-
-            ||
-
-            [],
-
-        crawledAt:
-
-            temp.temp?.time
-
-            ||
-
-            "-"
-
-    };
-
-    const idx =
-
-        profiles.findIndex(
-
-            x =>
-
-                x.name === item.name
-
-        );
-
-    if (
-        idx >= 0
-    )
-
-        profiles[idx] = item;
-
-    else
-
-        profiles.push(
-            item);
-
-    await writeProfiles(
-        profiles
-    );
-
-    await refreshProfiles();
-
-    alert(
-        "저장 완료"
-    );
-
+  await refreshProfileList(profileName);
+  showNotice(`'${profileName}' 프로필이 저장되었습니다.`);
 }
 
+/**
+ * 현재 선택된 프로필을 삭제합니다.
+ */
+export async function deleteCurrentProfile() {
+  const select = el("profileList");
+  const name = select.value;
 
-export async function deleteCurrent() {
+  if (!name) {
+    showNotice("삭제할 프로필을 선택해주세요.", true);
+    return;
+  }
 
-    const name =
+  if (!confirm(`'${name}' 프로필을 정말 삭제하시겠습니까?`)) {
+    return;
+  }
 
-        el(
-            "profileList"
-        ).value;
+  let profiles = await readProfiles();
+  profiles = profiles.filter((x) => x.name !== name);
+  await writeProfiles(profiles);
 
-    if (
-        !name
-    )
+  await refreshProfileList("");
+  resetForm();
+  showNotice(`'${name}' 프로필이 삭제되었습니다.`);
+}
+
+/**
+ * 다운로드 헬퍼
+ */
+function triggerJsonDownload(dataObject, fileName) {
+  const jsonString = JSON.stringify(dataObject, null, 2);
+  const blob = new Blob([jsonString], { type: "application/json;charset=utf-8" });
+  const downloadUrl = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(downloadUrl);
+}
+
+/**
+ * 1) 전체 설정 내보내기 (모든 프로필)
+ */
+export async function exportAllSettings() {
+  const data = await chrome.storage.local.get(["profiles", "activeProfileName"]);
+  const profiles = data.profiles || [];
+
+  if (profiles.length === 0) {
+    showNotice("내보낼 프로필 데이터가 없습니다.", true);
+    return;
+  }
+
+  const exportPayload = {
+    app: "Random URL Jumper",
+    type: "all_settings",
+    version: "2.1",
+    exportedAt: new Date().toISOString(),
+    activeProfileName: data.activeProfileName || "",
+    profiles
+  };
+
+  const dateStr = new Date().toISOString().slice(0, 10);
+  triggerJsonDownload(exportPayload, `random-url-jumper-all-settings-${dateStr}.json`);
+  showNotice("전체 설정 파일이 다운로드되었습니다.");
+}
+
+/**
+ * 2) 현재 선택된 개별 프로필만 내보내기
+ */
+export async function exportCurrentProfile() {
+  const currentName = el("profileList").value || el("profileName").value.trim();
+  if (!currentName) {
+    showNotice("내보낼 프로필을 먼저 선택하거나 저장해주세요.", true);
+    return;
+  }
+
+  const profiles = await readProfiles();
+  const profile = profiles.find((x) => x.name === currentName);
+
+  if (!profile) {
+    showNotice(`'${currentName}' 프로필 정보를 찾을 수 없습니다. 먼저 저장해주세요.`, true);
+    return;
+  }
+
+  const exportPayload = {
+    app: "Random URL Jumper",
+    type: "single_profile",
+    version: "2.1",
+    exportedAt: new Date().toISOString(),
+    profile
+  };
+
+  // 파일명에 안전한 문자열 처리
+  const safeName = profile.name.replace(/[\\/:*?"<>|]/g, "_");
+  const dateStr = new Date().toISOString().slice(0, 10);
+  triggerJsonDownload(exportPayload, `profile-${safeName}-${dateStr}.json`);
+  showNotice(`'${profile.name}' 프로필 파일이 다운로드되었습니다.`);
+}
+
+/**
+ * 설정 파일 가져오기 (전체 설정 및 개별 프로필 자동 판별 지원)
+ */
+export async function importSettings(file) {
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    // Case A: 개별 단일 프로필 파일인 경우
+    if (data.type === "single_profile" || (data.profile && data.profile.name && data.profile.baseUrl)) {
+      const incoming = data.profile || data;
+      if (!incoming.name || !incoming.baseUrl) {
+        showNotice("유효하지 않은 프로필 파일입니다 (이름, 주소 누락).", true);
         return;
+      }
 
-    const profiles =
+      let profiles = await readProfiles();
+      const existingIdx = profiles.findIndex((p) => p.name === incoming.name);
 
-        await readProfiles();
+      if (existingIdx >= 0) {
+        if (!confirm(`'${incoming.name}' 프로필이 이미 존재합니다. 덮어쓰시겠습니까?`)) {
+          return;
+        }
+        profiles[existingIdx] = incoming;
+      } else {
+        profiles.push(incoming);
+      }
 
-    await writeProfiles(
+      await writeProfiles(profiles);
+      await refreshProfileList(incoming.name);
+      await loadSelectedProfile();
+      showNotice(`'${incoming.name}' 프로필을 성공적으로 가져왔습니다.`);
+      return;
+    }
 
-        profiles.filter(
+    // Case B: 전체 설정 파일인 경우
+    let incomingProfiles = [];
+    if (Array.isArray(data.profiles)) {
+      incomingProfiles = data.profiles;
+    } else if (Array.isArray(data)) {
+      incomingProfiles = data;
+    } else {
+      showNotice("올바르지 않은 설정 파일 형식입니다.", true);
+      return;
+    }
 
-            x =>
-
-                x.name !== name
-
-        )
-
+    const validProfiles = incomingProfiles.filter(
+      (p) => p && typeof p.name === "string" && typeof p.baseUrl === "string"
     );
 
-    await refreshProfiles();
+    if (validProfiles.length === 0) {
+      showNotice("가져올 유효한 프로필이 파일에 없습니다.", true);
+      return;
+    }
 
-    alert(
-        "삭제 완료"
+    const shouldMerge = confirm(
+      `총 ${validProfiles.length}개의 프로필을 가져옵니다.\n\n[확인]: 기존 프로필과 병합 (이름 중복 시 덮어쓰기)\n[취소]: 기존 프로필을 지우고 전체 교체`
     );
 
+    let finalProfiles = [];
+    if (shouldMerge) {
+      const existing = await readProfiles();
+      const profileMap = new Map();
+      existing.forEach((p) => profileMap.set(p.name, p));
+      validProfiles.forEach((p) => profileMap.set(p.name, p));
+      finalProfiles = Array.from(profileMap.values());
+    } else {
+      finalProfiles = validProfiles;
+    }
+
+    const targetActiveName = data.activeProfileName || finalProfiles[0]?.name || "";
+
+    await writeProfiles(finalProfiles);
+
+    if (targetActiveName) {
+      const activeProf = finalProfiles.find((p) => p.name === targetActiveName) || finalProfiles[0];
+      await chrome.storage.local.set({
+        activeProfileName: activeProf.name,
+        baseUrl: activeProf.baseUrl,
+        mode: activeProf.mode,
+        length: activeProf.length,
+        interval: activeProf.interval,
+        suffix: activeProf.suffix
+      });
+    }
+
+    await refreshProfileList(targetActiveName);
+    await loadSelectedProfile();
+    showNotice(`총 ${validProfiles.length}개의 프로필을 성공적으로 가져왔습니다.`);
+  } catch (err) {
+    console.error("[Import] 오류:", err);
+    showNotice(`설정 파일을 읽는 중 오류가 발생했습니다: ${err.message}`, true);
+  }
 }

@@ -1,112 +1,76 @@
-import {
+import { loadProfiles, applyProfile } from "./profileSelector.js";
 
-    loadProfiles,
-    applyProfile
+const profileSelect = document.getElementById("profile");
+const startBtn = document.getElementById("start");
+const stopBtn = document.getElementById("stop");
+const jumpBtn = document.getElementById("jump");
+const settingsBtn = document.getElementById("settings");
+const statusBadge = document.getElementById("statusBadge");
 
+/**
+ * 팝업 UI 상태를 갱신합니다.
+ */
+function updateUiStatus(isRunning, interval = 10) {
+  if (isRunning) {
+    statusBadge.textContent = `작동 중 (${interval}초)`;
+    statusBadge.className = "badge running";
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+  } else {
+    statusBadge.textContent = "정지됨";
+    statusBadge.className = "badge idle";
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+  }
 }
 
-    from
-
-    "./profileSelector.js";
-
+// 1. 프로필 로드 및 현재 스케줄러 상태 동기화
 await loadProfiles();
 
-document
-    .getElementById(
-        "profile"
-    )
-    .addEventListener(
+chrome.runtime.sendMessage({ action: "getStatus" }, (response) => {
+  if (chrome.runtime.lastError || !response) {
+    updateUiStatus(false);
+    return;
+  }
+  updateUiStatus(response.running, response.interval);
+});
 
-        "change",
+// 2. 프로필 변경 이벤트
+profileSelect.addEventListener("change", async () => {
+  await applyProfile();
+});
 
-        applyProfile
+// 3. 시작 버튼
+startBtn.addEventListener("click", async () => {
+  const profile = await applyProfile();
+  if (!profile) {
+    alert("먼저 설정에서 프로필을 등록해주세요.");
+    return;
+  }
 
-    );
+  chrome.runtime.sendMessage({ action: "start" }, (res) => {
+    if (res?.ok) {
+      updateUiStatus(true, profile.interval || 10);
+    }
+  });
+});
 
-document
-    .getElementById(
-        "start"
-    )
-    .addEventListener(
+// 4. 정지 버튼
+stopBtn.addEventListener("click", () => {
+  chrome.runtime.sendMessage({ action: "stop" }, (res) => {
+    if (res?.ok) {
+      updateUiStatus(false);
+    }
+  });
+});
 
-        "click",
+// 5. 즉시 이동 버튼
+jumpBtn.addEventListener("click", async () => {
+  await applyProfile();
+  chrome.runtime.sendMessage({ action: "jump" });
+});
 
-        async () => {
-
-            await applyProfile();
-
-            await chrome
-                .runtime
-                .sendMessage({
-
-                    action: "start"
-
-                });
-
-        }
-
-    );
-
-document
-    .getElementById(
-        "stop"
-    )
-    .addEventListener(
-
-        "click",
-
-        async () => {
-
-            await chrome
-                .runtime
-                .sendMessage({
-
-                    action: "stop"
-
-                });
-
-        }
-
-    );
-
-document
-    .getElementById(
-        "jump"
-    )
-    .addEventListener(
-
-        "click",
-
-        async () => {
-
-            await applyProfile();
-
-            await chrome
-                .runtime
-                .sendMessage({
-
-                    action: "jump"
-
-                });
-
-        }
-
-    );
-
-document
-    .getElementById(
-        "settings"
-    )
-    .addEventListener(
-
-        "click",
-
-        () => {
-
-            chrome
-                .runtime
-                .openOptionsPage();
-
-        }
-
-    );
+// 6. 설정 버튼
+settingsBtn.addEventListener("click", () => {
+  chrome.runtime.openOptionsPage();
+});

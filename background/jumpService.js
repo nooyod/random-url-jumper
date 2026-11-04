@@ -1,242 +1,60 @@
-function randomString(
-    length
-) {
+import { generateRandom } from "../core/randomGenerator.js";
+import { buildUrl } from "../core/urlBuilder.js";
 
-    const chars =
+/**
+ * 활성화된 설정 및 프로필을 기반으로 지정된 탭(또는 현재 활성 탭)을 새 URL로 이동시킵니다.
+ * @param {number} [targetTabId] 대상 탭 ID (생략 시 현재 창의 활성 탭)
+ */
+export async function jump(targetTabId = null) {
+  const settings = await chrome.storage.local.get();
+  const profiles = settings.profiles || [];
 
-        "abcdefghijklmnopqrstuvwxyz";
+  if (profiles.length === 0) {
+    console.warn("[JumpService] 등록된 프로필이 없습니다.");
+    return false;
+  }
 
-    let result = "";
+  // 1. activeProfileName 우선 조회 -> 없으면 baseUrl 일치 항목 -> 첫 번째 프로필
+  const profile =
+    profiles.find((p) => p.name === settings.activeProfileName) ||
+    profiles.find((p) => p.baseUrl === settings.baseUrl) ||
+    profiles[0];
 
-    for (
-        let i = 0;
-        i < length;
-        i++
-    ) {
+  if (!profile || !profile.baseUrl) {
+    console.warn("[JumpService] 유효한 프로필 주소가 없습니다.");
+    return false;
+  }
 
-        result +=
+  let value = "";
 
-            chars[
-            Math.floor(
-                Math.random()
+  // 목록 크롤링 기반 ID 선택
+  if (profile.generator === "crawl" && profile.cachedIds?.length > 0) {
+    const randomIndex = Math.floor(Math.random() * profile.cachedIds.length);
+    value = String(profile.cachedIds[randomIndex]);
+  } else {
+    // 무작위 생성 (number, text, mix)
+    value = generateRandom(profile.mode || "number", profile.length || 4);
+  }
 
-                *
+  const url = buildUrl(profile.baseUrl, value, profile.suffix || "");
 
-                chars.length
-            )
+  try {
+    let tabId = targetTabId;
 
-            ];
-
+    if (!tabId) {
+      const activeTabs = await chrome.tabs.query({
+        active: true,
+        currentWindow: true
+      });
+      if (activeTabs.length === 0) return false;
+      tabId = activeTabs[0].id;
     }
 
-    return result;
-
-}
-
-function randomNumber(
-    length
-) {
-
-    let result = "";
-
-    for (
-        let i = 0;
-        i < length;
-        i++
-    ) {
-
-        result +=
-
-            Math.floor(
-
-                Math.random()
-
-                * 10
-
-            );
-
-    }
-
-    return result;
-
-}
-
-function generateRandom(
-    mode,
-    length
-) {
-
-    if (
-        mode === "text"
-    )
-
-        return randomString(
-            length
-        );
-
-    if (
-        mode === "mix"
-    ) {
-
-        if (
-            Math.random()
-            > 0.5
-        ) {
-
-            return randomString(
-                length
-            );
-
-        }
-
-        return randomNumber(
-            length
-        );
-
-    }
-
-    return randomNumber(
-        length);
-
-}
-
-export async function jump(
-    tabId
-) {
-
-    const settings =
-
-        await chrome
-            .storage
-            .local
-            .get();
-
-    // ���� ������ ���� �ּ��� ������ ã��
-    const profile =
-
-        settings
-            .profiles
-
-            ?.find(
-
-                p =>
-
-                    p.baseUrl ===
-
-                    settings.baseUrl
-
-            )
-
-        ||
-
-        settings
-            .profiles
-
-        ?.[0];
-
-
-    console.log(
-        "PROFILE",
-        profile
-    );
-
-    let value;
-
-
-    // ��� ���
-    if (
-
-        profile.generator === "crawl"
-
-        &&
-
-        profile.cachedIds
-
-            ?.length
-
-    ) {
-
-        value =
-
-            String(
-
-                profile.cachedIds[
-
-                Math.floor(
-
-                    Math.random()
-
-                    *
-
-                    profile.cachedIds.length
-
-                )
-
-                ]
-
-            );
-
-    }
-
-    // ����
-    else {
-
-        value =
-
-            generateRandom(
-
-                profile.mode,
-
-                profile.length
-
-            );
-
-    }
-
-    const url =
-
-        profile.baseUrl +
-
-        value +
-
-        (
-
-            profile.suffix
-
-            ||
-
-            ""
-
-        );
-
-    try {
-
-        await chrome
-            .tabs
-            .update(
-
-                tabId,
-
-                {
-
-                    url
-
-                }
-
-            );
-
-    }
-
-    catch (
-
-    e
-
-    ) {
-
-        console.log(
-            e
-        );
-
-    }
-
+    await chrome.tabs.update(tabId, { url });
+    console.log(`[JumpService] 탭 ${tabId} 이동 완료 -> ${url}`);
+    return true;
+  } catch (err) {
+    console.error("[JumpService] 이동 실패:", err);
+    return false;
+  }
 }

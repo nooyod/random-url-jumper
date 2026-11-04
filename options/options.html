@@ -1,281 +1,349 @@
 <!DOCTYPE html>
-
-<html>
-
+<html lang="ko">
 <head>
-
-    <meta charset="UTF-8">
-
-    <title>설정</title>
-
-    <style>
-
-        body {
-            font-family: sans-serif;
-            padding: 20px;
-            max-width: 700px;
-        }
-
-        label {
-            display: block;
-            margin-top: 10px;
-        }
-
-        input,
-        select {
-            width: 100%;
-            padding: 6px;
-            box-sizing: border-box;
-        }
-
-        button {
-            margin-top: 10px;
-        }
-
-        #status {
-            margin-top: 10px;
-        }
-    </style>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Random URL Jumper 설정</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f8f9fa;
+      color: #202124;
+      line-height: 1.5;
+      padding: 30px 20px;
+    }
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(60,64,67,0.15), 0 2px 6px rgba(60,64,67,0.08);
+      padding: 24px 30px;
+    }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1a73e8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .io-buttons {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid #dadce0;
+      background-color: #fff;
+      color: #3c4043;
+      transition: background-color 0.15s;
+    }
+    .btn-sm:hover {
+      background-color: #f1f3f4;
+    }
+    .profile-bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: #f1f3f4;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .profile-bar label {
+      font-weight: 600;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .profile-bar select {
+      flex: 1;
+      min-width: 140px;
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-top: 18px;
+      margin-bottom: 10px;
+      color: #3c4043;
+      border-bottom: 1px solid #ebebeb;
+      padding-bottom: 5px;
+    }
+    .field {
+      margin-bottom: 12px;
+    }
+    .field-row {
+      display: flex;
+      gap: 12px;
+    }
+    .field-row .field {
+      flex: 1;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 5px;
+      color: #495057;
+    }
+    .helper-text {
+      font-size: 11px;
+      color: #70757a;
+      margin-top: 3px;
+    }
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 13px;
+      border: 1px solid #dadce0;
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus,
+    select:focus {
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
+    }
+    .card {
+      background: #fafafa;
+      border: 1px solid #e8eaed;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 10px;
+      margin-bottom: 14px;
+    }
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid #e0e0e0;
+    }
+    button {
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+    .btn-primary {
+      background-color: #1a73e8;
+      color: #fff;
+      padding: 9px 20px;
+    }
+    .btn-primary:hover {
+      background-color: #1557b0;
+    }
+    .btn-secondary {
+      background-color: #fff;
+      border: 1px solid #dadce0;
+      color: #3c4043;
+    }
+    .btn-secondary:hover {
+      background-color: #f1f3f4;
+    }
+    .btn-danger {
+      background-color: #fff;
+      border: 1px solid #f28b82;
+      color: #d93025;
+    }
+    .btn-danger:hover {
+      background-color: #fce8e6;
+    }
+    .crawled-status {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: #e8f0fe;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #1967d2;
+    }
+    .notice-msg {
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      display: none;
+    }
+    .notice-msg.success {
+      display: block;
+      background-color: #e6f4ea;
+      color: #137333;
+    }
+    .notice-msg.error {
+      display: block;
+      background-color: #fce8e6;
+      color: #c5221f;
+    }
+  </style>
 </head>
-
 <body>
-
-    <h2>프로필 설정</h2>
-
-    <label>
-
-        프로필 선택
-
-        <select id="profileList">
-
-            <option value="">
-
-                새 프로필
-
-            </option>
-
-        </select>
-
-    </label>
-
-    <label>
-
-        프로필 이름
-
-        <input id="profileName">
-
-    </label>
-
-    <label>
-
-        주소
-
-        <input id="baseUrl">
-
-    </label>
-
-    <label>
-
-        생성 방식
-
-        <select id="generator">
-
-            <option value="random">
-
-                랜덤 생성
-
-            </option>
-
-            <option value="crawl">
-
-                목록 기반 랜덤
-
-            </option>
-
-        </select>
-
-    </label>
-
-
-    <div id="crawlArea">
-
-        <label>
-
-            목록 주소
-
-            <input id="listUrl">
-
-        </label>
-
-        <label>
-
-            게시글 선택자
-
-            <input id="linkSelector"
-                   value="a">
-
-        </label>
-
-        <label>
-
-            게시판 필터
-            (없으면 전체)
-
-            <input id="boardFilter"
-                   placeholder="id=eee">
-
-        </label>
-
-        <label>
-
-            페이지 파라미터
-
-            <input id="pageParam"
-                   value="pg">
-
-        </label>
-
-        <label>
-
-            최대 페이지 수
-
-            <input id="maxPages"
-                   value="10">
-
-        </label>
-
-        <label>
-
-            번호 추출 방식
-
-            <select id="extractMode">
-
-                <option value="param">
-
-                    URL 파라미터
-
-                </option>
-
-                <option value="regex">
-
-                    정규식
-
-                </option>
-
-                <option value="path">
-
-                    마지막 숫자
-
-                </option>
-
-            </select>
-
-        </label>
-
-        <label>
-
-            파라미터명
-
-            <input id="paramName"
-                   value="number">
-
-        </label>
-
-        <label>
-
-            정규식
-
-            <input id="regex">
-
-        </label>
-
-        <button id="refreshIds">
-
-            목록 새로고침
-
-        </button>
-
-        <div id="status">
-
-            0개 수집됨
-
-        </div>
-
+  <div class="container">
+    <div class="header-bar">
+      <h1><span>🌐</span> Random URL Jumper 설정</h1>
+      <div class="io-buttons">
+        <button id="exportAllBtn" type="button" class="btn-sm" title="모든 프로필과 전체 설정을 파일로 다운로드합니다.">📦 전체 내보내기</button>
+        <button id="importBtn" type="button" class="btn-sm" title="JSON 파일(전체 설정 또는 개별 프로필)을 불러옵니다.">📥 설정 가져오기</button>
+        <input type="file" id="importFileInput" accept=".json" style="display: none;">
+      </div>
     </div>
 
+    <!-- 프로필 관리 바 -->
+    <div class="profile-bar">
+      <label for="profileList">프로필:</label>
+      <select id="profileList">
+        <option value="">(새 프로필 만들기)</option>
+      </select>
+      <button id="newProfileBtn" type="button" class="btn-secondary">새로 만들기</button>
+      <button id="exportSingleBtn" type="button" class="btn-secondary" title="현재 선택된 프로필 1개만 파일로 내보냅니다.">📤 이 프로필 내보내기</button>
+      <button id="deleteBtn" type="button" class="btn-danger">삭제</button>
+    </div>
 
-    <label>
+    <form id="profileForm" onsubmit="return false;">
+      <div class="section-title">기본 설정</div>
+      
+      <div class="field">
+        <label for="profileName">프로필 이름</label>
+        <input id="profileName" type="text" placeholder="예: 추천 게시판 탐색" required>
+      </div>
 
-        문자 생성 방식
+      <div class="field">
+        <label for="baseUrl">기본 이동 주소 (Base URL)</label>
+        <input id="baseUrl" type="text" placeholder="https://example.com/view?id=" required>
+        <div class="helper-text">생성된 ID 또는 번호가 이 주소 뒤에 연결됩니다.</div>
+      </div>
 
-        <select id="mode">
+      <div class="field-row">
+        <div class="field">
+          <label for="suffix">접미사 (Suffix, 선택)</label>
+          <input id="suffix" type="text" placeholder="예: &ref=ext">
+        </div>
+        <div class="field">
+          <label for="interval">자동 점프 주기 (초)</label>
+          <input id="interval" type="number" min="1" value="10" required>
+        </div>
+      </div>
 
-            <option value="number">
-
-                숫자
-
-            </option>
-
-            <option value="text">
-
-                문자
-
-            </option>
-
-            <option value="mix">
-
-                혼합
-
-            </option>
-
+      <div class="section-title">ID 생성 방식</div>
+      <div class="field">
+        <label for="generator">생성 모드</label>
+        <select id="generator">
+          <option value="random">무작위 생성 (문자/숫자)</option>
+          <option value="crawl">게시판 크롤링 목록 기반 무작위</option>
         </select>
+      </div>
 
-    </label>
+      <!-- 1. 무작위 생성 영역 -->
+      <div id="randomArea" class="card">
+        <div class="field-row">
+          <div class="field">
+            <label for="mode">문자 종류</label>
+            <select id="mode">
+              <option value="number">숫자 (0-9)</option>
+              <option value="text">영문 소문자 (a-z)</option>
+              <option value="mix">영숫자 혼합 (a-z, 0-9)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="length">자릿수 (길이)</label>
+            <input id="length" type="number" min="1" max="50" value="4">
+          </div>
+        </div>
+      </div>
 
-    <label>
+      <!-- 2. 크롤링 설정 영역 -->
+      <div id="crawlArea" class="card" style="display: none;">
+        <div class="field">
+          <label for="listUrl">게시판 목록 주소 (List URL)</label>
+          <input id="listUrl" type="text" placeholder="https://example.com/board/list">
+        </div>
 
-        길이
+        <div class="field-row">
+          <div class="field">
+            <label for="linkSelector">게시글 링크 CSS 선택자</label>
+            <input id="linkSelector" type="text" value="a" placeholder="예: .post-link, a.title">
+          </div>
+          <div class="field">
+            <label for="boardFilter">링크 필터 (포함할 키워드)</label>
+            <input id="boardFilter" type="text" placeholder="예: view.php?">
+          </div>
+        </div>
 
-        <input id="length"
-               value="4">
+        <div class="field-row">
+          <div class="field">
+            <label for="pageParam">페이지 파라미터명</label>
+            <input id="pageParam" type="text" value="page" placeholder="page, pg 등">
+          </div>
+          <div class="field">
+            <label for="startPage">시작 페이지</label>
+            <input id="startPage" type="number" min="0" value="1">
+          </div>
+          <div class="field">
+            <label for="maxPages">수집할 최대 페이지 수</label>
+            <input id="maxPages" type="number" min="1" max="100" value="5">
+          </div>
+        </div>
 
-    </label>
+        <div class="field-row">
+          <div class="field">
+            <label for="extractMode">게시글 번호(ID) 추출 방식</label>
+            <select id="extractMode">
+              <option value="param">URL 쿼리 파라미터</option>
+              <option value="regex">정규표현식</option>
+              <option value="path">URL 경로 마지막 숫자</option>
+            </select>
+          </div>
+          <div class="field" id="paramField">
+            <label for="paramName">파라미터 이름</label>
+            <input id="paramName" type="text" value="id" placeholder="id, no, wr_id 등">
+          </div>
+          <div class="field" id="regexField" style="display: none;">
+            <label for="regex">정규표현식 (캡처 그룹 ())</label>
+            <input id="regex" type="text" placeholder="/view/(\d+)">
+          </div>
+        </div>
 
-    <label>
+        <div style="margin-top: 12px;">
+          <button id="refreshIdsBtn" type="button" class="btn-secondary">🔄 목록 수집(크롤링) 실행</button>
+        </div>
 
-        간격
+        <div id="crawledStatus" class="crawled-status">
+          수집된 ID: <span id="idCount">0</span>개 (마지막 수집: <span id="crawlTime">-</span>)
+        </div>
+      </div>
 
-        <input id="interval"
-               value="10">
+      <!-- 피드백 메시지 박스 -->
+      <div id="noticeMsg" class="notice-msg"></div>
 
-    </label>
+      <!-- 하단 액션 버튼 -->
+      <div class="actions">
+        <button id="saveBtn" type="button" class="btn-primary">설정 저장</button>
+      </div>
+    </form>
+  </div>
 
-    <label>
-
-        뒷주소
-
-        <input id="suffix">
-
-    </label>
-
-    <button id="save">
-
-        저장
-
-    </button>
-
-    <button id="delete">
-
-        삭제
-
-    </button>
-
-    <script type="module"
-            src="options.js">
-
-    </script>
-
+  <script type="module" src="options.js"></script>
 </body>
-
 </html>
