@@ -39,11 +39,32 @@ function matchPresets(parsedUrl) {
       extractMode: "param",
       paramName: "no",
       pageParam: "page",
+      pageType: "param",
+      delaySec: 1.0,
       suffix: ""
     };
   }
 
-  // 2. 아카라이브 (arca.live)
+  // 2. 꾸르 (ggoorr.net) 및 라이믹스/XE 계열
+  if (host.includes("ggoorr.net")) {
+    const match = path.match(/^\/([a-zA-Z0-9_-]+)/);
+    const board = match ? match[1] : "thisthat";
+    return {
+      siteName: `꾸르 (${board})`,
+      baseUrl: `https://ggoorr.net/${board}/`,
+      listUrl: `https://ggoorr.net/${board}`,
+      boardFilter: `/${board}/`,
+      linkSelector: ".title a, a.hx, td.title a",
+      extractMode: "path",
+      paramName: "id",
+      pageParam: "page",
+      pageType: "param",
+      delaySec: 1.5, // Cloudflare WAF 방어를 위해 1.5초 권장
+      suffix: ""
+    };
+  }
+
+  // 3. 아카라이브 (arca.live)
   if (host.includes("arca.live")) {
     const match = path.match(/^\/b\/([a-zA-Z0-9_-]+)/);
     const channel = match ? match[1] : "";
@@ -56,11 +77,13 @@ function matchPresets(parsedUrl) {
       extractMode: "path",
       paramName: "id",
       pageParam: "p",
+      pageType: "param",
+      delaySec: 1.2,
       suffix: ""
     };
   }
 
-  // 3. 루리웹 (ruriweb.com)
+  // 4. 루리웹 (ruriweb.com)
   if (host.includes("ruriweb.com")) {
     const match = path.match(/^(.*\/board\/\d+)/);
     const basePath = match ? match[1] : path;
@@ -73,11 +96,13 @@ function matchPresets(parsedUrl) {
       extractMode: "path",
       paramName: "id",
       pageParam: "page",
+      pageType: "param",
+      delaySec: 1.0,
       suffix: ""
     };
   }
 
-  // 4. 에펨코리아 (fmkorea.com)
+  // 5. 에펨코리아 (fmkorea.com)
   if (host.includes("fmkorea.com")) {
     const mid = searchParams.get("mid");
     const docSrl = searchParams.get("document_srl");
@@ -92,11 +117,12 @@ function matchPresets(parsedUrl) {
         extractMode: "param",
         paramName: "document_srl",
         pageParam: "page",
+        pageType: "param",
+        delaySec: 1.5,
         suffix: ""
       };
     }
 
-    // RESTful 형태 (fmkorea.com/12345 또는 fmkorea.com/best/12345)
     const match = path.match(/^(.*)\/(\d+)$/);
     const listPath = match ? match[1] : "";
     return {
@@ -108,11 +134,13 @@ function matchPresets(parsedUrl) {
       extractMode: "path",
       paramName: "id",
       pageParam: "page",
+      pageType: "param",
+      delaySec: 1.5,
       suffix: ""
     };
   }
 
-  // 5. 클리앙 (clien.net)
+  // 6. 클리앙 (clien.net)
   if (host.includes("clien.net")) {
     const match = path.match(/^(.*\/service\/board\/[a-zA-Z0-9_-]+)/);
     const basePath = match ? match[1] : path;
@@ -125,11 +153,13 @@ function matchPresets(parsedUrl) {
       extractMode: "path",
       paramName: "id",
       pageParam: "po",
+      pageType: "param",
+      delaySec: 1.0,
       suffix: ""
     };
   }
 
-  // 6. 더쿠 (theqoo.net)
+  // 7. 더쿠 (theqoo.net)
   if (host.includes("theqoo.net")) {
     const match = path.match(/^\/([a-zA-Z0-9_-]+)/);
     const board = match ? match[1] : "";
@@ -142,11 +172,13 @@ function matchPresets(parsedUrl) {
       extractMode: "path",
       paramName: "id",
       pageParam: "page",
+      pageType: "param",
+      delaySec: 1.0,
       suffix: ""
     };
   }
 
-  // 7. 그누보드 계열 (bbs/board.php?bo_table=xxx&wr_id=123)
+  // 8. 그누보드 계열
   if (path.includes("board.php") && searchParams.has("bo_table") && searchParams.has("wr_id")) {
     const table = searchParams.get("bo_table");
     return {
@@ -158,6 +190,8 @@ function matchPresets(parsedUrl) {
       extractMode: "param",
       paramName: "wr_id",
       pageParam: "page",
+      pageType: "param",
+      delaySec: 1.0,
       suffix: ""
     };
   }
@@ -166,13 +200,11 @@ function matchPresets(parsedUrl) {
 }
 
 /**
- * 일반적인 URL 패턴 휴리스틱 분석 (파라미터형 vs 경로형)
+ * 일반적인 URL 패턴 휴리스틱 분석
  */
 function analyzeGenericUrl(parsedUrl) {
   const searchParams = parsedUrl.searchParams;
 
-  // A. 쿼리 파라미터형 분석
-  // 1) 알려진 ID 키가 있는지 확인
   for (const key of KNOWN_ID_PARAMS) {
     if (searchParams.has(key) && /^\d+$/.test(searchParams.get(key))) {
       const listParams = new URLSearchParams(searchParams);
@@ -193,12 +225,13 @@ function analyzeGenericUrl(parsedUrl) {
         extractMode: "param",
         paramName: key,
         pageParam: "page",
+        pageType: "param",
+        delaySec: 1.2,
         suffix: ""
       };
     }
   }
 
-  // 2) 값이 숫자인 임의의 파라미터가 있는지 확인
   for (const [k, v] of searchParams.entries()) {
     if (/^\d{2,}$/.test(v)) {
       const listParams = new URLSearchParams(searchParams);
@@ -216,12 +249,13 @@ function analyzeGenericUrl(parsedUrl) {
         extractMode: "param",
         paramName: k,
         pageParam: "page",
+        pageType: "param",
+        delaySec: 1.2,
         suffix: ""
       };
     }
   }
 
-  // B. 경로형 (RESTful URL) 분석: 끝부분이 /12345 또는 /12345.html
   const pathMatch = parsedUrl.pathname.match(/^(.*\/)(\d+)(\.[a-zA-Z0-9]+)?$/);
   if (pathMatch) {
     const basePath = pathMatch[1];
@@ -236,11 +270,12 @@ function analyzeGenericUrl(parsedUrl) {
       extractMode: "path",
       paramName: "id",
       pageParam: "page",
+      pageType: "param",
+      delaySec: 1.2,
       suffix
     };
   }
 
-  // C. 최후의 폴백 (URL 기본 분할)
   return {
     siteName: parsedUrl.hostname,
     baseUrl: parsedUrl.href,
@@ -250,13 +285,12 @@ function analyzeGenericUrl(parsedUrl) {
     extractMode: "param",
     paramName: "id",
     pageParam: "page",
+    pageType: "param",
+    delaySec: 1.2,
     suffix: ""
   };
 }
 
-/**
- * 웹페이지 HTML을 비동기로 요청하여 추가 힌트(제목, 진짜 목록 링크) 수집
- */
 async function fetchAdditionalInfo(url) {
   try {
     const res = await fetch(url, { method: "GET" });
@@ -265,17 +299,14 @@ async function fetchAdditionalInfo(url) {
     const html = await res.text();
     const dom = new DOMParser().parseFromString(html, "text/html");
 
-    // 1. 페이지 제목 추출
     let pageTitle = dom.querySelector("title")?.textContent?.trim() || "";
     if (pageTitle) {
-      // 흔한 사이트명 접미사/구분자 정돈 (예: "글제목 - 디시인사이드" -> "디시인사이드")
       pageTitle = pageTitle
         .split(/[-|_|::]/)
         .pop()
         .trim();
     }
 
-    // 2. 목록 링크(List button) 탐색
     let detectedListUrl = null;
     const listLinkNodes = dom.querySelectorAll("a");
     for (const a of listLinkNodes) {
@@ -302,10 +333,6 @@ async function fetchAdditionalInfo(url) {
   }
 }
 
-/**
- * 샘플 게시글 URL을 분석하여 완성된 프로필 설정 객체를 반환합니다.
- * @param {string} sampleUrl 분석할 게시글 주소
- */
 export async function analyzePostUrl(sampleUrl) {
   if (!sampleUrl || typeof sampleUrl !== "string") {
     throw new Error("유효한 URL을 입력해주세요.");
@@ -315,13 +342,11 @@ export async function analyzePostUrl(sampleUrl) {
   try {
     parsedUrl = new URL(sampleUrl.trim());
   } catch {
-    throw new Error("올바른 웹사이트 URL 형식이 아닙니다. (http:// 또는 https:// 포함 필요)");
+    throw new Error("올바른 웹사이트 URL 형식이 아닙니다.");
   }
 
-  // 1. 프리셋 또는 패턴 분석
   let result = matchPresets(parsedUrl) || analyzeGenericUrl(parsedUrl);
 
-  // 2. 추가 정보(HTML 웹페이지) 비동기 스캔 시도
   const extra = await fetchAdditionalInfo(sampleUrl.trim());
   if (extra) {
     if (extra.pageTitle && extra.pageTitle.length >= 2) {
@@ -341,6 +366,8 @@ export async function analyzePostUrl(sampleUrl) {
     extractMode: result.extractMode,
     paramName: result.paramName,
     pageParam: result.pageParam,
+    pageType: result.pageType || "param",
+    delaySec: result.delaySec || 1.2,
     suffix: result.suffix,
     generator: "crawl",
     interval: 10,

@@ -6,14 +6,29 @@ const el = (id) => document.getElementById(id);
 
 /**
  * 인라인 알림 메시지를 표시합니다.
+ * @param {string} message 표시할 메시지
+ * @param {'success'|'error'|'warning'} type 알림 종류
+ * @param {number} duration 지속 시간 (ms)
  */
-export function showNotice(message, isError = false) {
+export function showNotice(message, type = "success", duration = 5000) {
   const box = el("noticeMsg");
   box.textContent = message;
-  box.className = `notice-msg ${isError ? "error" : "success"}`;
-  setTimeout(() => {
-    box.style.display = "none";
-  }, 4000);
+
+  let className = "notice-msg success";
+  if (type === "error" || type === true) {
+    className = "notice-msg error";
+  } else if (type === "warning") {
+    className = "notice-msg warning";
+  }
+
+  box.className = className;
+  box.style.display = "block";
+
+  if (duration > 0) {
+    setTimeout(() => {
+      box.style.display = "none";
+    }, duration);
+  }
 }
 
 /**
@@ -65,9 +80,11 @@ export function resetForm() {
   el("listUrl").value = "";
   el("linkSelector").value = "a";
   el("boardFilter").value = "";
+  el("pageType").value = "param";
   el("pageParam").value = "page";
   el("startPage").value = "1";
   el("maxPages").value = "5";
+  el("delaySec").value = "1.2";
   el("extractMode").value = "param";
   el("paramName").value = "id";
   el("regex").value = "";
@@ -75,7 +92,6 @@ export function resetForm() {
   el("idCount").textContent = "0";
   el("crawlTime").textContent = "-";
 
-  // 영역 전환 이벤트 트리거
   el("generator").dispatchEvent(new Event("change"));
   el("extractMode").dispatchEvent(new Event("change"));
 }
@@ -105,9 +121,11 @@ export async function loadSelectedProfile() {
   el("listUrl").value = p.listUrl || "";
   el("linkSelector").value = p.linkSelector || "a";
   el("boardFilter").value = p.boardFilter || "";
+  el("pageType").value = p.pageType || "param";
   el("pageParam").value = p.pageParam || "page";
   el("startPage").value = p.startPage ?? 1;
   el("maxPages").value = p.maxPages ?? 5;
+  el("delaySec").value = p.delaySec ?? 1.2;
   el("extractMode").value = p.extractMode || "param";
   el("paramName").value = p.paramName || "id";
   el("regex").value = p.regex || "";
@@ -127,13 +145,13 @@ export async function saveProfile() {
   const baseUrl = el("baseUrl").value.trim();
 
   if (!profileName) {
-    showNotice("프로필 이름을 입력해주세요.", true);
+    showNotice("프로필 이름을 입력해주세요.", "error");
     el("profileName").focus();
     return;
   }
 
   if (!baseUrl) {
-    showNotice("기본 주소(Base URL)를 입력해주세요.", true);
+    showNotice("기본 주소(Base URL)를 입력해주세요.", "error");
     el("baseUrl").focus();
     return;
   }
@@ -164,9 +182,11 @@ export async function saveProfile() {
     listUrl: el("listUrl").value.trim(),
     linkSelector: el("linkSelector").value.trim() || "a",
     boardFilter: el("boardFilter").value.trim(),
+    pageType: el("pageType").value || "param",
     pageParam: el("pageParam").value.trim() || "page",
     startPage: Math.max(0, Number(el("startPage").value) || 1),
     maxPages: Math.max(1, Number(el("maxPages").value) || 5),
+    delaySec: Math.max(0.2, Number(el("delaySec").value) || 1.2),
     extractMode: el("extractMode").value,
     paramName: el("paramName").value.trim() || "id",
     regex: el("regex").value.trim(),
@@ -194,7 +214,7 @@ export async function saveProfile() {
   });
 
   await refreshProfileList(profileName);
-  showNotice(`'${profileName}' 프로필이 저장되었습니다.`);
+  showNotice(`'${profileName}' 프로필이 저장되었습니다.`, "success");
 }
 
 /**
@@ -205,7 +225,7 @@ export async function deleteCurrentProfile() {
   const name = select.value;
 
   if (!name) {
-    showNotice("삭제할 프로필을 선택해주세요.", true);
+    showNotice("삭제할 프로필을 선택해주세요.", "error");
     return;
   }
 
@@ -219,12 +239,9 @@ export async function deleteCurrentProfile() {
 
   await refreshProfileList("");
   resetForm();
-  showNotice(`'${name}' 프로필이 삭제되었습니다.`);
+  showNotice(`'${name}' 프로필이 삭제되었습니다.`, "success");
 }
 
-/**
- * 다운로드 헬퍼
- */
 function triggerJsonDownload(dataObject, fileName) {
   const jsonString = JSON.stringify(dataObject, null, 2);
   const blob = new Blob([jsonString], { type: "application/json;charset=utf-8" });
@@ -239,15 +256,12 @@ function triggerJsonDownload(dataObject, fileName) {
   URL.revokeObjectURL(downloadUrl);
 }
 
-/**
- * 1) 전체 설정 내보내기 (모든 프로필)
- */
 export async function exportAllSettings() {
   const data = await chrome.storage.local.get(["profiles", "activeProfileName"]);
   const profiles = data.profiles || [];
 
   if (profiles.length === 0) {
-    showNotice("내보낼 프로필 데이터가 없습니다.", true);
+    showNotice("내보낼 프로필 데이터가 없습니다.", "error");
     return;
   }
 
@@ -262,16 +276,13 @@ export async function exportAllSettings() {
 
   const dateStr = new Date().toISOString().slice(0, 10);
   triggerJsonDownload(exportPayload, `random-url-jumper-all-settings-${dateStr}.json`);
-  showNotice("전체 설정 파일이 다운로드되었습니다.");
+  showNotice("전체 설정 파일이 다운로드되었습니다.", "success");
 }
 
-/**
- * 2) 현재 선택된 개별 프로필만 내보내기
- */
 export async function exportCurrentProfile() {
   const currentName = el("profileList").value || el("profileName").value.trim();
   if (!currentName) {
-    showNotice("내보낼 프로필을 먼저 선택하거나 저장해주세요.", true);
+    showNotice("내보낼 프로필을 먼저 선택하거나 저장해주세요.", "error");
     return;
   }
 
@@ -279,7 +290,7 @@ export async function exportCurrentProfile() {
   const profile = profiles.find((x) => x.name === currentName);
 
   if (!profile) {
-    showNotice(`'${currentName}' 프로필 정보를 찾을 수 없습니다. 먼저 저장해주세요.`, true);
+    showNotice(`'${currentName}' 프로필 정보를 찾을 수 없습니다. 먼저 저장해주세요.`, "error");
     return;
   }
 
@@ -291,16 +302,12 @@ export async function exportCurrentProfile() {
     profile
   };
 
-  // 파일명에 안전한 문자열 처리
   const safeName = profile.name.replace(/[\\/:*?"<>|]/g, "_");
   const dateStr = new Date().toISOString().slice(0, 10);
   triggerJsonDownload(exportPayload, `profile-${safeName}-${dateStr}.json`);
-  showNotice(`'${profile.name}' 프로필 파일이 다운로드되었습니다.`);
+  showNotice(`'${profile.name}' 프로필 파일이 다운로드되었습니다.`, "success");
 }
 
-/**
- * 설정 파일 가져오기 (전체 설정 및 개별 프로필 자동 판별 지원)
- */
 export async function importSettings(file) {
   if (!file) return;
 
@@ -308,11 +315,10 @@ export async function importSettings(file) {
     const text = await file.text();
     const data = JSON.parse(text);
 
-    // Case A: 개별 단일 프로필 파일인 경우
     if (data.type === "single_profile" || (data.profile && data.profile.name && data.profile.baseUrl)) {
       const incoming = data.profile || data;
       if (!incoming.name || !incoming.baseUrl) {
-        showNotice("유효하지 않은 프로필 파일입니다 (이름, 주소 누락).", true);
+        showNotice("유효하지 않은 프로필 파일입니다 (이름, 주소 누락).", "error");
         return;
       }
 
@@ -331,18 +337,17 @@ export async function importSettings(file) {
       await writeProfiles(profiles);
       await refreshProfileList(incoming.name);
       await loadSelectedProfile();
-      showNotice(`'${incoming.name}' 프로필을 성공적으로 가져왔습니다.`);
+      showNotice(`'${incoming.name}' 프로필을 성공적으로 가져왔습니다.`, "success");
       return;
     }
 
-    // Case B: 전체 설정 파일인 경우
     let incomingProfiles = [];
     if (Array.isArray(data.profiles)) {
       incomingProfiles = data.profiles;
     } else if (Array.isArray(data)) {
       incomingProfiles = data;
     } else {
-      showNotice("올바르지 않은 설정 파일 형식입니다.", true);
+      showNotice("올바르지 않은 설정 파일 형식입니다.", "error");
       return;
     }
 
@@ -351,7 +356,7 @@ export async function importSettings(file) {
     );
 
     if (validProfiles.length === 0) {
-      showNotice("가져올 유효한 프로필이 파일에 없습니다.", true);
+      showNotice("가져올 유효한 프로필이 파일에 없습니다.", "error");
       return;
     }
 
@@ -388,9 +393,9 @@ export async function importSettings(file) {
 
     await refreshProfileList(targetActiveName);
     await loadSelectedProfile();
-    showNotice(`총 ${validProfiles.length}개의 프로필을 성공적으로 가져왔습니다.`);
+    showNotice(`총 ${validProfiles.length}개의 프로필을 성공적으로 가져왔습니다.`, "success");
   } catch (err) {
     console.error("[Import] 오류:", err);
-    showNotice(`설정 파일을 읽는 중 오류가 발생했습니다: ${err.message}`, true);
+    showNotice(`설정 파일을 읽는 중 오류가 발생했습니다: ${err.message}`, "error");
   }
 }

@@ -53,7 +53,7 @@ el("importFileInput").addEventListener("change", async (e) => {
 el("analyzeBtn").addEventListener("click", async () => {
   const sampleUrl = el("sampleUrlInput").value.trim();
   if (!sampleUrl) {
-    showNotice("분석할 게시글 주소를 먼저 입력해주세요.", true);
+    showNotice("분석할 게시글 주소를 먼저 입력해주세요.", "error");
     el("sampleUrlInput").focus();
     return;
   }
@@ -78,19 +78,21 @@ el("analyzeBtn").addEventListener("click", async () => {
     el("listUrl").value = analyzed.listUrl || "";
     el("linkSelector").value = analyzed.linkSelector || "a";
     el("boardFilter").value = analyzed.boardFilter || "";
+    el("pageType").value = analyzed.pageType || "param";
     el("pageParam").value = analyzed.pageParam || "page";
     el("startPage").value = analyzed.startPage || 1;
     el("maxPages").value = analyzed.maxPages || 5;
+    el("delaySec").value = analyzed.delaySec || 1.2;
 
     el("extractMode").value = analyzed.extractMode || "param";
     el("paramName").value = analyzed.paramName || "id";
     el("regex").value = analyzed.regex || "";
     el("extractMode").dispatchEvent(new Event("change"));
 
-    showNotice(`분석 성공: '${analyzed.name}' 설정이 자동으로 채워졌습니다! [설정 저장]을 눌러 완료하세요.`);
+    showNotice(`분석 성공: '${analyzed.name}' 설정이 자동으로 채워졌습니다!`, "success");
   } catch (err) {
     console.error("[Analyzer] 에러:", err);
-    showNotice(`URL 분석 실패: ${err.message}`, true);
+    showNotice(`URL 분석 실패: ${err.message}`, "error");
   } finally {
     btn.disabled = false;
     btn.textContent = "⚡ 자동 분석";
@@ -123,7 +125,7 @@ el("extractMode").addEventListener("change", () => {
 el("refreshIdsBtn").addEventListener("click", async () => {
   const listUrl = el("listUrl").value.trim();
   if (!listUrl) {
-    showNotice("게시판 목록 주소(List URL)를 입력해주세요.", true);
+    showNotice("게시판 목록 주소(List URL)를 입력해주세요.", "error");
     el("listUrl").focus();
     return;
   }
@@ -131,6 +133,7 @@ el("refreshIdsBtn").addEventListener("click", async () => {
   const btn = el("refreshIdsBtn");
   const idCountSpan = el("idCount");
   const crawlTimeSpan = el("crawlTime");
+  const delaySec = Math.max(0.2, Number(el("delaySec").value) || 1.2);
 
   btn.disabled = true;
   btn.textContent = "⏳ 수집 중...";
@@ -143,19 +146,21 @@ el("refreshIdsBtn").addEventListener("click", async () => {
       mode: el("extractMode").value,
       param: el("paramName").value.trim() || "id",
       regex: el("regex").value.trim(),
+      pageType: el("pageType").value || "param",
       pageParam: el("pageParam").value.trim() || "page",
       startPage: Number(el("startPage").value) || 1,
       maxPages: Number(el("maxPages").value) || 5,
-      delayMs: 250,
-      onProgress: (page, total) => {
-        btn.textContent = `⏳ 수집 중 (${page}/${total}페이지)...`;
+      delayMs: Math.round(delaySec * 1000),
+      onProgress: (info) => {
+        btn.textContent = `⏳ 수집 중 (${info.page}/${info.total}페이지, ${info.collectedSoFar}개 수집됨)...`;
       }
     };
 
-    const ids = await crawlBoard(config);
+    const crawlResult = await crawlBoard(config);
+    const ids = crawlResult.ids;
     const timeStr = new Date().toLocaleString();
 
-    // 임시 저장 (저장 버튼 누르면 최종 반영)
+    // 임시 저장 (저장 버튼 누르면 최종 프로필에 반영)
     await chrome.storage.local.set({
       tempCrawl: {
         ids,
@@ -166,10 +171,24 @@ el("refreshIdsBtn").addEventListener("click", async () => {
     idCountSpan.textContent = String(ids.length);
     crawlTimeSpan.textContent = timeStr;
 
-    showNotice(`크롤링 완료: 총 ${ids.length}개의 게시글 ID를 수집했습니다.`);
+    // 차단 여부 및 조기 중단 사유에 따른 안내 메시지 분기
+    if (crawlResult.stoppedReason?.startsWith("blocked_")) {
+      showNotice(
+        `⚠️ [차단 감지] ${crawlResult.blockedPage}페이지에서 사이트 방화벽(Cloudflare)에 의해 요청이 제한되었습니다. 수집된 ${ids.length}개의 ID를 임시 저장했습니다. 다음 수집 시 '요청 간격'을 1.5초 이상으로 늘려보세요!`,
+        "warning",
+        8000
+      );
+    } else if (crawlResult.stoppedReason === "duplicate_page") {
+      showNotice(
+        `크롤링 완료: 총 ${ids.length}개의 ID 수집 완료 (이전 페이지와 동일한 글 목록이 반환되어 수집을 안전하게 마쳤습니다).`,
+        "success"
+      );
+    } else {
+      showNotice(`크롤링 완료: 총 ${ids.length}개의 고유 게시글 ID를 성공적으로 수집했습니다! [설정 저장]을 눌러 저장하세요.`, "success");
+    }
   } catch (err) {
-    console.error(err);
-    showNotice(`크롤링 실패: ${err.message}`, true);
+    console.error("[Crawl] 에러:", err);
+    showNotice(`크롤링 실패: ${err.message}`, "error");
   } finally {
     btn.disabled = false;
     btn.textContent = "🔄 목록 수집(크롤링) 실행";
