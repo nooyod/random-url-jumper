@@ -30,13 +30,18 @@ function matchPresets(parsedUrl) {
     const board = match ? match[1] : "etohumor07";
     const category = searchParams.get("category") || "";
 
+    // 이토랜드의 게시판 목록 주소는 반드시 /list 가 포함되어야 함!
+    const categoryQuery = category ? `?category=${encodeURIComponent(category)}` : "";
+    const listUrl = `${parsedUrl.origin}/b/${board}/list${categoryQuery}`;
+
     return {
       siteName: `이토랜드 (${board}${category ? ` - ${category}` : ""})`,
-      baseUrl: `https://etoland.co.kr/b/${board}/view/`,
-      listUrl: `https://etoland.co.kr/b/${board}${category ? `?category=${encodeURIComponent(category)}` : ""}`,
-      boardFilter: category ? `category=${category}` : `/b/${board}/view/`,
+      baseUrl: `${parsedUrl.origin}/b/${board}/view/`,
+      listUrl,
+      // href에는 카테고리 파라미터가 없으므로 해당 게시판의 view 링크만 필터링
+      boardFilter: `/b/${board}/view/`,
       linkSelector: "a[href*='/view/']",
-      extractMode: "full", // ⭐ 슬러그 필수 사이트이므로 전체 URL 모드 적용!
+      extractMode: "full", // 슬러그가 필수이므로 전체 URL 모드
       paramName: "id",
       pageParam: "page",
       pageType: "param",
@@ -373,7 +378,8 @@ export async function analyzePostUrl(sampleUrl) {
     if (extra.pageTitle && extra.pageTitle.length >= 2) {
       result.siteName = extra.pageTitle;
     }
-    if (extra.detectedListUrl) {
+    // 이토랜드 같은 프리셋이 있는 경우 엉뚱한 목록 링크 덮어쓰기 방지
+    if (extra.detectedListUrl && !parsedUrl.hostname.includes("etoland.co.kr")) {
       result.listUrl = extra.detectedListUrl;
     }
   }
