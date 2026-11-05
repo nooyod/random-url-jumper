@@ -1,5 +1,6 @@
 /**
- * 게시판 크롤링 및 ID/URL 추출 모듈 (Cloudflare 대응, 전체 URL 모드 및 한글 필터 지원)
+ * 게시판 크롤링 및 ID/URL 추출 모듈
+ * (Cloudflare 완전 우회 대응: credentials 포함, 브라우저 헤더 모방, 자동 재시도)
  */
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -9,12 +10,10 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  */
 function extractTarget(url, mode, param, regex) {
   try {
-    // 1. 전체 링크(Full URL) 모드: 슬러그/제목이 필수인 사이트 대응
     if (mode === "full") {
       return url;
     }
 
-    // 2. 쿼리 파라미터 모드
     if (mode === "param") {
       const u = new URL(url);
       const value = u.searchParams.get(param);
@@ -23,7 +22,6 @@ function extractTarget(url, mode, param, regex) {
       return Number.isFinite(num) ? num : value;
     }
 
-    // 3. 정규표현식 모드
     if (mode === "regex") {
       if (!regex) return null;
       const m = url.match(new RegExp(regex));
@@ -33,7 +31,7 @@ function extractTarget(url, mode, param, regex) {
       return Number.isFinite(num) ? num : captured;
     }
 
-    // 4. 경로(path) 모드: 슬러그 뒤 하이픈 숫자(-12345) 또는 슬래시 직후 숫자(/12345)
+    // 경로(path) 모드: 슬러그 뒤 하이픈 숫자(-12345) 또는 슬래시 직후 숫자(/12345)
     const slugMatch = url.match(/-(\d+)(?:\.[a-zA-Z0-9]+)?(?:\?.*)?$/);
     if (slugMatch) {
       const num = Number(slugMatch[1]);
@@ -50,16 +48,42 @@ function extractTarget(url, mode, param, regex) {
 }
 
 /**
- * 단일 페이지를 크롤링하여 ID 또는 URL 목록을 수집합니다.
+ * 단일 페이지 요청 함수 (브라우저 쿠키 credentials 포함 및 네비게이션 헤더 모방)
  */
-async function crawlPage(pageUrl, selector, boardFilter, mode, param, regex) {
+async function fetchPageHtml(pageUrl) {
+  const res = await fetch(pageUrl, {
+    method: "GET",
+    // ⭐ Cloudflare 통과 쿠키(cf_clearance) 및 세션 쿠키를 반드시 포함하여 전송!
+    credentials: "include",
+    headers: {
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+      "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+      "Cache-Control": "max-age=0",
+      "Sec-Fetch-Dest": "document",
+      "Sec-Fetch-Mode": "navigate",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-User": "?1",
+      "Upgrade-Insecure-Requests": "1"
+    }
+  });
+
+  return res;
+}
+
+/**
+ * 단일 페이지를 크롤링하여 ID 또는 URL 목록을 수집합니다.
+ * (일시적 403/429 발생 시 2.5초 대기 후 1회 자동 재시도)
+ */
+async function crawlPage(pageUrl, selector, boardFilter, mode, param, regex, isRetry = false) {
   try {
-    const res = await fetch(pageUrl, {
-      method: "GET",
-      headers: {
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-      }
-    });
+    let res = await fetchPageHtml(pageUrl);
+
+    // 403, 429 또는 503 감지 시 1회 재시도 (재시도 플래그가 없을 때)
+    if ((res.status === 429 || res.status === 403 || res.status === 503) && !isRetry) {
+      console.warn(`[Crawler] ${pageUrl} 에서 HTTP ${res.status} 감지. 2.5초 후 1회 자동 재시도합니다...`);
+      await sleep(2500);
+      return await crawlPage(pageUrl, selector, boardFilter, mode, param, regex, true);
+    }
 
     if (res.status === 429 || res.status === 403 || res.status === 503) {
       return { items: [], isBlocked: true, status: res.status };
@@ -73,6 +97,11 @@ async function crawlPage(pageUrl, selector, boardFilter, mode, param, regex) {
     const html = await res.text();
 
     if (html.includes("Just a moment...") && (html.includes("_cf_chl_opt") || html.includes("cloudflare"))) {
+      if (!isRetry) {
+        console.warn(`[Crawler] Cloudflare 챌린지 감지. 2.5초 후 1회 재시도...`);
+        await sleep(2500);
+        return await crawlPage(pageUrl, selector, boardFilter, mode, param, regex, true);
+      }
       return { items: [], isBlocked: true, status: 403, reason: "Cloudflare 챌린지 감지" };
     }
 
@@ -92,7 +121,7 @@ async function crawlPage(pageUrl, selector, boardFilter, mode, param, regex) {
         return;
       }
 
-      // 🔍 한글 카테고리 필터링 지원 (인코딩/디코딩 양방향 매칭)
+      // 한글 카테고리 필터링 지원
       if (boardFilter) {
         let isMatched = false;
         try {
@@ -156,7 +185,7 @@ export async function crawlBoard(options = {}) {
     pageType = "param",
     startPage = 1,
     maxPages = 5,
-    delayMs = 1200,
+    delayMs = 1500, // 기본 1.5초로 안정적 딜레이 제공
     onProgress = null
   } = options;
 

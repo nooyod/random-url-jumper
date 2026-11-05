@@ -24,13 +24,32 @@ function matchPresets(parsedUrl) {
   const path = parsedUrl.pathname;
   const searchParams = parsedUrl.searchParams;
 
-  // 1. 이토랜드 (etoland.co.kr) - 슬러그/제목이 URL에 필수인 대표 사이트
+  // 1. 꾸르 (ggoorr.net) 및 라이믹스/XE 계열
+  if (host.includes("ggoorr.net")) {
+    const match = path.match(/^\/([a-zA-Z0-9_-]+)/);
+    const board = match ? match[1] : "thisthat";
+    return {
+      siteName: `꾸르 (${board})`,
+      baseUrl: `https://ggoorr.net/${board}/`,
+      listUrl: `https://ggoorr.net/${board}`,
+      boardFilter: `/${board}/`,
+      // ⭐ 스킨 클래스 의존성을 없애고 href 속성으로 본문 글 100% 매칭!
+      linkSelector: `a[href*="/${board}/"]`,
+      extractMode: "path",
+      paramName: "id",
+      pageParam: "page",
+      pageType: "param",
+      delaySec: 1.5, // Cloudflare 차단 방지 권장 딜레이
+      suffix: ""
+    };
+  }
+
+  // 2. 이토랜드 (etoland.co.kr) - 슬러그/제목이 URL에 필수인 대표 사이트
   if (host.includes("etoland.co.kr")) {
     const match = path.match(/^\/b\/([a-zA-Z0-9_-]+)/);
     const board = match ? match[1] : "etohumor07";
     const category = searchParams.get("category") || "";
 
-    // 이토랜드의 게시판 목록 주소는 반드시 /list 가 포함되어야 함!
     const categoryQuery = category ? `?category=${encodeURIComponent(category)}` : "";
     const listUrl = `${parsedUrl.origin}/b/${board}/list${categoryQuery}`;
 
@@ -38,10 +57,9 @@ function matchPresets(parsedUrl) {
       siteName: `이토랜드 (${board}${category ? ` - ${category}` : ""})`,
       baseUrl: `${parsedUrl.origin}/b/${board}/view/`,
       listUrl,
-      // href에는 카테고리 파라미터가 없으므로 해당 게시판의 view 링크만 필터링
       boardFilter: `/b/${board}/view/`,
       linkSelector: "a[href*='/view/']",
-      extractMode: "full", // 슬러그가 필수이므로 전체 URL 모드
+      extractMode: "full",
       paramName: "id",
       pageParam: "page",
       pageType: "param",
@@ -50,7 +68,7 @@ function matchPresets(parsedUrl) {
     };
   }
 
-  // 2. 디시인사이드 (dcinside.com)
+  // 3. 디시인사이드 (dcinside.com)
   if (host.includes("dcinside.com")) {
     const gallId = searchParams.get("id") || "";
     const isMgal = path.includes("mgallery") || path.includes("mini");
@@ -67,25 +85,6 @@ function matchPresets(parsedUrl) {
       pageParam: "page",
       pageType: "param",
       delaySec: 1.0,
-      suffix: ""
-    };
-  }
-
-  // 3. 꾸르 (ggoorr.net) 및 라이믹스/XE 계열
-  if (host.includes("ggoorr.net")) {
-    const match = path.match(/^\/([a-zA-Z0-9_-]+)/);
-    const board = match ? match[1] : "thisthat";
-    return {
-      siteName: `꾸르 (${board})`,
-      baseUrl: `https://ggoorr.net/${board}/`,
-      listUrl: `https://ggoorr.net/${board}`,
-      boardFilter: `/${board}/`,
-      linkSelector: ".title a, a.hx, td.title a",
-      extractMode: "path",
-      paramName: "id",
-      pageParam: "page",
-      pageType: "param",
-      delaySec: 1.5,
       suffix: ""
     };
   }
@@ -319,7 +318,7 @@ function analyzeGenericUrl(parsedUrl) {
 
 async function fetchAdditionalInfo(url) {
   try {
-    const res = await fetch(url, { method: "GET" });
+    const res = await fetch(url, { method: "GET", credentials: "include" });
     if (!res.ok) return null;
 
     const html = await res.text();
@@ -378,7 +377,6 @@ export async function analyzePostUrl(sampleUrl) {
     if (extra.pageTitle && extra.pageTitle.length >= 2) {
       result.siteName = extra.pageTitle;
     }
-    // 이토랜드 같은 프리셋이 있는 경우 엉뚱한 목록 링크 덮어쓰기 방지
     if (extra.detectedListUrl && !parsedUrl.hostname.includes("etoland.co.kr")) {
       result.listUrl = extra.detectedListUrl;
     }
