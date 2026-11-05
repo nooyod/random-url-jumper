@@ -24,7 +24,28 @@ function matchPresets(parsedUrl) {
   const path = parsedUrl.pathname;
   const searchParams = parsedUrl.searchParams;
 
-  // 1. 디시인사이드 (dcinside.com)
+  // 1. 이토랜드 (etoland.co.kr) - 슬러그/제목이 URL에 필수인 대표 사이트
+  if (host.includes("etoland.co.kr")) {
+    const match = path.match(/^\/b\/([a-zA-Z0-9_-]+)/);
+    const board = match ? match[1] : "etohumor07";
+    const category = searchParams.get("category") || "";
+
+    return {
+      siteName: `이토랜드 (${board}${category ? ` - ${category}` : ""})`,
+      baseUrl: `https://etoland.co.kr/b/${board}/view/`,
+      listUrl: `https://etoland.co.kr/b/${board}${category ? `?category=${encodeURIComponent(category)}` : ""}`,
+      boardFilter: category ? `category=${category}` : `/b/${board}/view/`,
+      linkSelector: "a[href*='/view/']",
+      extractMode: "full", // ⭐ 슬러그 필수 사이트이므로 전체 URL 모드 적용!
+      paramName: "id",
+      pageParam: "page",
+      pageType: "param",
+      delaySec: 1.0,
+      suffix: ""
+    };
+  }
+
+  // 2. 디시인사이드 (dcinside.com)
   if (host.includes("dcinside.com")) {
     const gallId = searchParams.get("id") || "";
     const isMgal = path.includes("mgallery") || path.includes("mini");
@@ -45,7 +66,7 @@ function matchPresets(parsedUrl) {
     };
   }
 
-  // 2. 꾸르 (ggoorr.net) 및 라이믹스/XE 계열
+  // 3. 꾸르 (ggoorr.net) 및 라이믹스/XE 계열
   if (host.includes("ggoorr.net")) {
     const match = path.match(/^\/([a-zA-Z0-9_-]+)/);
     const board = match ? match[1] : "thisthat";
@@ -59,12 +80,12 @@ function matchPresets(parsedUrl) {
       paramName: "id",
       pageParam: "page",
       pageType: "param",
-      delaySec: 1.5, // Cloudflare WAF 방어를 위해 1.5초 권장
+      delaySec: 1.5,
       suffix: ""
     };
   }
 
-  // 3. 아카라이브 (arca.live)
+  // 4. 아카라이브 (arca.live)
   if (host.includes("arca.live")) {
     const match = path.match(/^\/b\/([a-zA-Z0-9_-]+)/);
     const channel = match ? match[1] : "";
@@ -83,7 +104,7 @@ function matchPresets(parsedUrl) {
     };
   }
 
-  // 4. 루리웹 (ruriweb.com)
+  // 5. 루리웹 (ruriweb.com)
   if (host.includes("ruriweb.com")) {
     const match = path.match(/^(.*\/board\/\d+)/);
     const basePath = match ? match[1] : path;
@@ -102,7 +123,7 @@ function matchPresets(parsedUrl) {
     };
   }
 
-  // 5. 에펨코리아 (fmkorea.com)
+  // 6. 에펨코리아 (fmkorea.com)
   if (host.includes("fmkorea.com")) {
     const mid = searchParams.get("mid");
     const docSrl = searchParams.get("document_srl");
@@ -140,7 +161,7 @@ function matchPresets(parsedUrl) {
     };
   }
 
-  // 6. 클리앙 (clien.net)
+  // 7. 클리앙 (clien.net)
   if (host.includes("clien.net")) {
     const match = path.match(/^(.*\/service\/board\/[a-zA-Z0-9_-]+)/);
     const basePath = match ? match[1] : path;
@@ -159,7 +180,7 @@ function matchPresets(parsedUrl) {
     };
   }
 
-  // 7. 더쿠 (theqoo.net)
+  // 8. 더쿠 (theqoo.net)
   if (host.includes("theqoo.net")) {
     const match = path.match(/^\/([a-zA-Z0-9_-]+)/);
     const board = match ? match[1] : "";
@@ -178,7 +199,7 @@ function matchPresets(parsedUrl) {
     };
   }
 
-  // 8. 그누보드 계열
+  // 9. 그누보드 계열
   if (path.includes("board.php") && searchParams.has("bo_table") && searchParams.has("wr_id")) {
     const table = searchParams.get("bo_table");
     return {

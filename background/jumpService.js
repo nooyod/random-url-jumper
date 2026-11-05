@@ -3,7 +3,6 @@ import { buildUrl } from "../core/urlBuilder.js";
 
 /**
  * 일반 브라우저 창('normal')의 활성 탭을 안전하게 찾습니다.
- * (팝아웃 창 등 확장 프로그램 팝업 윈도우 제외)
  */
 async function findActiveNormalTab() {
   try {
@@ -44,7 +43,7 @@ export async function jump(targetTabId = null, targetProfileName = null) {
     return false;
   }
 
-  // 1. 프로필 찾기: 인자로 전달된 targetProfileName 우선 -> activeProfileName -> baseUrl -> 첫 번째
+  // 1. 프로필 찾기
   let profile = null;
   if (targetProfileName) {
     profile = profiles.find((p) => p.name === targetProfileName);
@@ -57,23 +56,35 @@ export async function jump(targetTabId = null, targetProfileName = null) {
       profiles[0];
   }
 
-  if (!profile || !profile.baseUrl) {
-    console.warn("[JumpService] 유효한 프로필 주소가 없습니다.");
+  if (!profile) {
+    console.warn("[JumpService] 유효한 프로필이 없습니다.");
     return false;
   }
 
   let value = "";
+  let isFullUrl = false;
 
-  // 목록 크롤링 기반 ID 선택
+  // 목록 크롤링 기반 ID/URL 선택
   if (profile.generator === "crawl" && profile.cachedIds?.length > 0) {
     const randomIndex = Math.floor(Math.random() * profile.cachedIds.length);
     value = String(profile.cachedIds[randomIndex]);
+    if (value.startsWith("http://") || value.startsWith("https://")) {
+      isFullUrl = true;
+    }
   } else {
     // 무작위 생성 (number, text, mix)
     value = generateRandom(profile.mode || "number", profile.length || 4);
   }
 
-  const url = buildUrl(profile.baseUrl, value, profile.suffix || "");
+  // 2. 이동할 URL 결정 (완전한 URL인 경우 그대로 사용)
+  const url = isFullUrl
+    ? value
+    : buildUrl(profile.baseUrl || "", value, profile.suffix || "");
+
+  if (!url) {
+    console.warn("[JumpService] 생성된 URL이 올바르지 않습니다.");
+    return false;
+  }
 
   try {
     let tabId = targetTabId;
